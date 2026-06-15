@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bridge to Hope — DHS Hours Auto-Filler</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="wrap">
+    <header class="app-head">
+      <h1>Bridge to Hope</h1>
+      <p class="sub">First-To-Work attendance &amp; study-time auto-filler<br />
+        <span class="muted">DHS 816 (class attendance) &amp; DHS 819 (unsupervised study)</span></p>
+    </header>
+
+    <section class="card">
+      <h2>Student</h2>
+      <div class="grid2">
+        <label>Student name
+          <input id="name" type="text" placeholder="First Last" autocomplete="off" />
+        </label>
+        <label>Educational institution
+          <input id="institution" type="text" value="UHMC" autocomplete="off" />
+        </label>
+        <label>HANA ID# <span class="opt">(optional)</span>
+          <input id="hanaId" type="text" placeholder="leave blank if none" autocomplete="off" />
+        </label>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Month</h2>
+      <div class="grid3">
+        <label>Month
+          <select id="month"></select>
+        </label>
+        <label>Year
+          <input id="year" type="number" min="2020" max="2100" step="1" />
+        </label>
+        <span></span>
+        <label>Start day <span class="opt">(optional)</span>
+          <select id="startDay"></select>
+        </label>
+        <label>End day <span class="opt">(optional)</span>
+          <select id="endDay"></select>
+        </label>
+        <span></span>
+      </div>
+      <p class="hint">Leave start/end day on “Full month” unless you only need part of the month.</p>
+    </section>
+
+    <section class="card">
+      <h2>Classes</h2>
+      <p class="hint">Listed top-to-bottom in the order they appear on the forms. Blocks auto-sequence
+        as back-to-back 90-minute periods from the day start time. Override a block’s start/end only if you need to.</p>
+      <div class="day-start">
+        <label>Day start time
+          <input id="dayStart" type="text" value="8:00" inputmode="numeric" placeholder="8:00" />
+        </label>
+        <span class="hint inline">24-hour or plain clock, e.g. <code>8:00</code> or <code>13:30</code></span>
+      </div>
+
+      <div class="class-head">
+        <span>Class code</span>
+        <span>Start <span class="opt">(auto)</span></span>
+        <span>End <span class="opt">(auto)</span></span>
+        <span></span>
+      </div>
+      <div id="classList"></div>
+      <button id="addClass" type="button" class="ghost">+ Add class</button>
+    </section>
+
+    <section class="card">
+      <h2>Generate</h2>
+      <div class="gen-row">
+        <button id="generate" type="button" class="primary">Generate &amp; download both PDFs</button>
+      </div>
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+    </section>
+
+    <section class="card" id="summaryCard" hidden>
+      <h2>Weekly accountable hours <span class="opt">(informational)</span></h2>
+      <div class="dep-row">
+        <label>Youngest dependent
+          <select id="depAge">
+            <option value="20">Under 6 — need ≥ 20 hrs/week</option>
+            <option value="30">6 and over — need ≥ 30 hrs/week</option>
+          </select>
+        </label>
+      </div>
+      <table id="weekTable" class="weeks">
+        <thead><tr><th>Week (Mon–Sun)</th><th>Class + study hrs</th><th>Status</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <p class="hint">This is a helper only — it does not change the PDFs. Partial weeks at the
+        month edges will naturally be lower.</p>
+    </section>
+
+    <footer class="foot">
+      <span>Runs entirely in your browser. Nothing is uploaded or stored.</span>
+    </footer>
+  </main>
+
+  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <script src="schedule.js"></script>
+  <script src="pdffill.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
