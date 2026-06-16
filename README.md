@@ -1,21 +1,27 @@
 # Bridge to Hope — DHS Hours Auto-Filler
 
-A single static web page that auto-fills the two monthly First-To-Work (TANF) forms for
+A single static web page that auto-fills the monthly First-To-Work (TANF) forms for
 student-parents in the **Bridge to Hope** program:
 
 - **DHS 816** *Educational Activity Attendance Form* — gets **Monday & Wednesday** dates.
 - **DHS 819** *Unsupervised Study Timesheet* — gets **Tuesday & Thursday** dates.
+- **DHS 817** *Monitored Study Session Form* — gets the **same Tuesday & Thursday** dates
+  as the DHS 819. Its certification block (study-monitor name, signature, date, phone,
+  email, other contact) is left **blank and fillable** for the monitor to complete.
 
-You enter the student, the month, and the class list once; the tool generates both filled
-PDFs and downloads them. It runs **entirely in the browser** — no backend, no build step,
-no data ever leaves the device, and nothing is stored.
+You enter the student, the month, and the class list once, then tick which form(s) you
+want; the tool generates only the selected filled PDFs and downloads them. It runs
+**entirely in the browser** — no backend, no build step, no data ever leaves the device,
+and nothing is stored.
 
 ---
 
 ## What it does
 
-- Finds every Mon/Wed (→ DHS 816) and every Tue/Thu (→ DHS 819) in the chosen month,
-  with an optional start-day / end-day clip for partial months.
+- Finds every Mon/Wed (→ DHS 816) and every Tue/Thu (→ DHS 819 and DHS 817) in the chosen
+  month, with an optional start-day / end-day clip for partial months.
+- Lets you pick any combination of the three forms with checkboxes (none selected by
+  default); generates and downloads only the ones you check.
 - For each date, writes one row per class in the order you list them, with start time,
   end time, and total decimal hours.
 - Classes auto-sequence as back-to-back 90-minute blocks from the day start time; you can
@@ -42,8 +48,9 @@ styles.css                 styling
 app.js                     UI wiring
 schedule.js                date/schedule/formatting logic
 pdffill.js                 fills the AcroForm fields with pdf-lib
-ClassAttend_DHS 816.pdf    blank attendance form  (you provide — see below)
-StudyTimesheet_DHS 819.pdf blank study timesheet  (you provide — see below)
+ClassAttend_DHS 816.pdf    blank attendance form     (you provide — see below)
+StudyTimesheet_DHS 819.pdf blank study timesheet     (you provide — see below)
+MonitoredStudy_DHS 817.pdf blank monitored-study form (you provide — see below)
 ```
 
 `pdf-lib` is loaded from a CDN at runtime — there is nothing to install or build.
@@ -57,11 +64,12 @@ The app fills the official blank forms in place, so the two blank PDFs must sit 
 
 - `ClassAttend_DHS 816.pdf`
 - `StudyTimesheet_DHS 819.pdf`
+- `MonitoredStudy_DHS 817.pdf`
 
 They are already included in this folder. If you ever replace them with newer official
-versions, keep the same filenames (or update the `PDF_816` / `PDF_819` constants at the
-top of `app.js`). The forms must keep their fillable AcroForm fields — both current
-versions do.
+versions, keep the same filenames (or update the `PDF_816` / `PDF_819` / `PDF_817`
+constants at the top of `app.js`). The forms must keep their fillable AcroForm fields —
+all current versions do.
 
 ---
 
@@ -96,18 +104,22 @@ Then open <http://localhost:8000/> in your browser.
 > Tip: the folder may include dev-only files (`_dev_test.js`, `package.json`,
 > `node_modules/`). They're harmless on Pages, but you can skip uploading them to keep the
 > repo tidy. The app itself only needs `index.html`, `styles.css`, `app.js`,
-> `schedule.js`, `pdffill.js`, and the two blank PDFs.
+> `schedule.js`, `pdffill.js`, and the three blank PDFs.
 
 ---
 
 ## How to use
 
-1. Enter the student name and institution (defaults to **UHMC**); HANA ID# is optional.
-2. Pick the month and year. Optionally set start/end day for a partial month.
-3. Set the day start time (default **8:00**) and list the classes in order. Times fill in
+1. Tick the form(s) you want: Class Attendance (816), Unsupervised Study (819), and/or
+   Monitored Study (817). Any combination works.
+2. Enter the student name and institution (defaults to **UHMC**); HANA ID# is optional.
+3. Pick the month and year (default to the current month/year). Optionally set start/end
+   day for a partial month.
+4. Set the day start time (default **8:00**) and list the classes in order. Times fill in
    automatically; override a block only if needed.
-4. Click **Generate & download both PDFs**.
-5. Open each PDF in Adobe, review, sign, and submit.
+5. Click **Generate & download selected forms**.
+6. Open each PDF in Adobe, review, sign (and have the monitor complete Section 1 of the
+   817 if generated), and submit.
 
 ---
 

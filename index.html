@@ -11,8 +11,18 @@
     <header class="app-head">
       <h1>Bridge to Hope</h1>
       <p class="sub">First-To-Work attendance &amp; study-time auto-filler<br />
-        <span class="muted">DHS 816 (class attendance) &amp; DHS 819 (unsupervised study)</span></p>
+        <span class="muted">DHS 816 (class attendance), DHS 819 (unsupervised study) &amp; DHS 817 (monitored study)</span></p>
     </header>
+
+    <section class="card">
+      <h2>Forms to generate</h2>
+      <p class="hint">Choose which form(s) to fill. You can pick any combination.</p>
+      <div class="form-picker">
+        <label class="check"><input id="form816" type="checkbox" /> Class Attendance (DHS 816)</label>
+        <label class="check"><input id="form819" type="checkbox" /> Unsupervised Study (DHS 819)</label>
+        <label class="check"><input id="form817" type="checkbox" /> Monitored Study (DHS 817)</label>
+      </div>
+    </section>
 
     <section class="card">
       <h2>Student</h2>
@@ -74,7 +84,7 @@
     <section class="card">
       <h2>Generate</h2>
       <div class="gen-row">
-        <button id="generate" type="button" class="primary">Generate &amp; download both PDFs</button>
+        <button id="generate" type="button" class="primary">Generate &amp; download selected forms</button>
       </div>
       <p id="status" class="status" role="status" aria-live="polite"></p>
     </section>

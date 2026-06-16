@@ -8,11 +8,13 @@
   // Blank form filenames (kept exactly as delivered; spaces are URL-encoded on fetch).
   var PDF_816 = "ClassAttend_DHS 816.pdf";
   var PDF_819 = "StudyTimesheet_DHS 819.pdf";
+  var PDF_817 = "MonitoredStudy_DHS 817.pdf";
   var BLOCK_MINUTES = 90;
 
   var $ = function (id) { return document.getElementById(id); };
 
   var el = {
+    form816: $("form816"), form819: $("form819"), form817: $("form817"),
     name: $("name"), institution: $("institution"), hanaId: $("hanaId"),
     month: $("month"), year: $("year"), startDay: $("startDay"), endDay: $("endDay"),
     dayStart: $("dayStart"), classList: $("classList"), addClass: $("addClass"),
@@ -22,7 +24,7 @@
   };
 
   // Cache of fetched blank PDFs.
-  var blankBytes = { "816": null, "819": null };
+  var blankBytes = { "816": null, "819": null, "817": null };
 
   /* ---------- setup form controls ---------- */
 
@@ -179,9 +181,16 @@
   /* ---------- generate ---------- */
 
   async function generate() {
+    var want816 = el.form816.checked;
+    var want819 = el.form819.checked;
+    var want817 = el.form817.checked;
+    if (!want816 && !want819 && !want817) {
+      setStatus("Select at least one form to generate.", "err"); return;
+    }
+
     var cfg = buildConfig();
-    if (!cfg.name) { setStatus("Enter the student name first.", "err"); return; }
     if (!cfg.classes.length) { setStatus("Add at least one class.", "err"); return; }
+    if (!cfg.name) { setStatus("Enter the student name first.", "err"); return; }
     if (isNaN(cfg.month) || isNaN(cfg.year)) { setStatus("Pick a month and year.", "err"); return; }
     if (cfg.startDay && cfg.endDay && cfg.startDay > cfg.endDay) {
       setStatus("Start day is after end day.", "err"); return;
@@ -198,27 +207,45 @@
         monthYear: res.monthYearLabel
       };
 
-      var b816 = await getBlank("816", PDF_816);
-      var b819 = await getBlank("819", PDF_819);
-
-      var out816 = await Fill.fill(window.PDFLib, b816, "816", header, res.attendanceRows);
-      var out819 = await Fill.fill(window.PDFLib, b819, "819", header, res.studyRows);
-
       var ln = lastName(cfg.name);
       var tag = res.monAbbr + cfg.year;
-      download(out816.bytes, "DHS816_Attendance_" + ln + "_" + tag + ".pdf");
-      setTimeout(function () {
-        download(out819.bytes, "DHS819_StudyTime_" + ln + "_" + tag + ".pdf");
-      }, 350);
+      var jobs = []; // { bytes, filename, overflow }
+
+      // DHS 816 — class attendance (Mon/Wed).
+      if (want816) {
+        var b816 = await getBlank("816", PDF_816);
+        var out816 = await Fill.fill(window.PDFLib, b816, "816", header, res.attendanceRows);
+        jobs.push({ bytes: out816.bytes, filename: "DHS816_Attendance_" + ln + "_" + tag + ".pdf", overflow: out816.overflow });
+      }
+      // DHS 819 — unsupervised study (Tue/Thu).
+      if (want819) {
+        var b819 = await getBlank("819", PDF_819);
+        var out819 = await Fill.fill(window.PDFLib, b819, "819", header, res.studyRows);
+        jobs.push({ bytes: out819.bytes, filename: "DHS819_StudyTime_" + ln + "_" + tag + ".pdf", overflow: out819.overflow });
+      }
+      // DHS 817 — monitored study. Same Tue/Thu content as the 819; Section 1
+      // (monitor name/signature/etc.) is left blank and fillable by pdffill.js.
+      if (want817) {
+        var b817 = await getBlank("817", PDF_817);
+        var out817 = await Fill.fill(window.PDFLib, b817, "817", header, res.studyRows);
+        jobs.push({ bytes: out817.bytes, filename: "DHS817_MonitoredStudy_" + ln + "_" + tag + ".pdf", overflow: out817.overflow });
+      }
+
+      // Stagger the downloads so browsers don't drop the later files.
+      var overflow = 0;
+      jobs.forEach(function (job, i) {
+        overflow += job.overflow;
+        setTimeout(function () { download(job.bytes, job.filename); }, i * 350);
+      });
 
       renderSummary(cfg);
 
-      var overflow = out816.overflow + out819.overflow;
+      var noun = jobs.length === 1 ? "PDF" : jobs.length + " PDFs";
       if (overflow > 0) {
         setStatus("Done — but " + overflow + " row(s) exceeded the forms’ capacity and were left off. " +
           "Try clipping the date range.", "err");
       } else {
-        setStatus("Done. Both PDFs downloaded. Sign them in Adobe after opening.", "ok");
+        setStatus("Done. " + noun + " downloaded. Sign them in Adobe after opening.", "ok");
       }
     } catch (e) {
       console.error(e);
@@ -233,7 +260,7 @@
   function init() {
     fillMonthYear();
     fillDayDropdowns();
-    ["ACC 201", "MATH 115", "BLAW 200", "ECON 130"].forEach(addClassRow);
+    addClassRow(""); // start empty: one placeholder row reading "e.g. ACC 201"
     refreshPlaceholders();
 
     el.addClass.addEventListener("click", function () { addClassRow(""); refreshPlaceholders(); });
@@ -247,6 +274,7 @@
     // Warm the blank PDFs so the first Generate is instant (and surfaces missing files early).
     getBlank("816", PDF_816).catch(function () {});
     getBlank("819", PDF_819).catch(function () {});
+    getBlank("817", PDF_817).catch(function () {});
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);

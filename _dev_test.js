@@ -60,15 +60,38 @@ async function main() {
 
   const f816 = fs.readFileSync(path.join(DIR, "ClassAttend_DHS 816.pdf"));
   const f819 = fs.readFileSync(path.join(DIR, "StudyTimesheet_DHS 819.pdf"));
+  const f817 = fs.readFileSync(path.join(DIR, "MonitoredStudy_DHS 817.pdf"));
 
   const out816 = await Fill.fill(PDFLib, f816, "816", header, res.attendanceRows);
   const out819 = await Fill.fill(PDFLib, f819, "819", header, res.studyRows);
+  // DHS 817 gets the SAME rows as the 819 (Tue/Thu study content).
+  const out817 = await Fill.fill(PDFLib, f817, "817", header, res.studyRows);
 
   fs.writeFileSync(path.join(OUT, "out816.pdf"), out816.bytes);
   fs.writeFileSync(path.join(OUT, "out819.pdf"), out819.bytes);
+  fs.writeFileSync(path.join(OUT, "out817.pdf"), out817.bytes);
   console.log("816 used/cap:", out816.used, out816.capacity, "overflow:", out816.overflow);
   console.log("819 used/cap:", out819.used, out819.capacity, "overflow:", out819.overflow);
-  console.log("Wrote _dev_out/out816.pdf and out819.pdf");
+  console.log("817 used/cap:", out817.used, out817.capacity, "overflow:", out817.overflow);
+
+  // Confirm DHS 817 Section 1 stays blank + the field grid filled correctly.
+  const doc817 = await PDFLib.PDFDocument.load(out817.bytes);
+  const form817 = doc817.getForm();
+  const section1 = [
+    "Print Name of Authorized Study Monitor",
+    "Phone Number", "Study Monitor Email Address", "Other Contact Information"
+  ];
+  const blanks = section1.map((n) => {
+    try { return n + "=" + JSON.stringify(form817.getTextField(n).getText() || ""); }
+    catch (e) { return n + "=<missing>"; }
+  });
+  console.log("817 Section 1 (should all be empty):", blanks.join(", "));
+  // Spot-check the grid: first data row and a page-2 continuation row.
+  ["Date of AttendanceRow1", "Class Title  SubjectRow1", "Date of AttendanceRow1_2", "Date of AttendanceRow20"].forEach((n) => {
+    try { console.log("  817 " + n + " =", JSON.stringify(form817.getTextField(n).getText() || "")); }
+    catch (e) { console.log("  817 " + n + " = <missing>"); }
+  });
+  console.log("Wrote _dev_out/out816.pdf, out819.pdf and out817.pdf");
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });

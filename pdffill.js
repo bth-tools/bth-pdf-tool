@@ -53,6 +53,27 @@
         total: "Total Study TimeRow"
       },
       suffixes: suffixes(17, 17, 18, 29) // 17 + 17 + 12 = 46 rows
+    },
+    // DHS 817 — Monitored Study Session Form. Structurally a twin of the 816
+    // (same column prefixes), but re-measured against its own pages: it has 19
+    // rows on page 1, 19 duplicated (_2) plus a 20–24 continuation on page 2.
+    // Section 1 (Authorized Study Monitor name/signature/date/phone/email/other)
+    // is intentionally never set here, so it stays blank and fillable in Adobe.
+    "817": {
+      header: {
+        name: "Student Name",
+        institution: "Educational Institution",
+        hanaId: "HANA ID",
+        monthYear: "MonthYear"
+      },
+      cols: {
+        date: "Date of AttendanceRow",
+        code: "Class Title  SubjectRow", // two spaces — matches the PDF
+        start: "Attendance Start TimeRow",
+        end: "Attendance End TimeRow",
+        total: "Total Attendance TimeRow"
+      },
+      suffixes: suffixes(19, 19, 20, 24) // 19 + 19 + 5 = 43 rows
     }
   };
 
