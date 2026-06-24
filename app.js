@@ -15,12 +15,14 @@
 
   var el = {
     form816: $("form816"), form819: $("form819"), form817: $("form817"),
-    name: $("name"), institution: $("institution"), hanaId: $("hanaId"),
+    name: $("name"), institution: $("institution"),
     month: $("month"), year: $("year"), startDay: $("startDay"), endDay: $("endDay"),
     dayStart: $("dayStart"), classList: $("classList"), addClass: $("addClass"),
     generate: $("generate"), status: $("status"),
     summaryCard: $("summaryCard"), depAge: $("depAge"),
-    weekBody: document.querySelector("#weekTable tbody")
+    weekBody: document.querySelector("#weekTable tbody"),
+    howToBtn: $("howToBtn"), howToOverlay: $("howToOverlay"),
+    howToClose: $("howToClose")
   };
 
   // Cache of fetched blank PDFs.
@@ -96,7 +98,9 @@
     return {
       name: el.name.value.trim(),
       institution: el.institution.value.trim(),
-      hanaId: el.hanaId.value.trim(),
+      // HANA ID input was removed from the UI; the PDF field is left blank so
+      // BTH staff can complete it by hand. pdffill.js only sets it when present.
+      hanaId: "",
       classes: readClasses(),
       dayStartMin: dayStartMin,
       blockMinutes: BLOCK_MINUTES,
@@ -255,6 +259,51 @@
     }
   }
 
+  /* ---------- how-to modal ---------- */
+
+  function setupHowTo() {
+    var overlay = el.howToOverlay;
+    var dialog = overlay.querySelector(".modal");
+
+    function focusable() {
+      return Array.prototype.slice.call(
+        dialog.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
+      ).filter(function (n) { return !n.disabled && n.offsetParent !== null; });
+    }
+
+    function onKeydown(e) {
+      if (e.key === "Escape") { close(); return; }
+      if (e.key !== "Tab") return;
+      // Focus trap.
+      var items = focusable();
+      if (!items.length) return;
+      var first = items[0], last = items[items.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault(); last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault(); first.focus();
+      }
+    }
+
+    function open() {
+      overlay.hidden = false;
+      document.addEventListener("keydown", onKeydown);
+      el.howToClose.focus();
+    }
+
+    function close() {
+      overlay.hidden = true;
+      document.removeEventListener("keydown", onKeydown);
+      el.howToBtn.focus();
+    }
+
+    el.howToBtn.addEventListener("click", open);
+    el.howToClose.addEventListener("click", close);
+    overlay.addEventListener("click", function (e) {
+      if (e.target === overlay) close(); // click outside the dialog
+    });
+  }
+
   /* ---------- init ---------- */
 
   function init() {
@@ -270,6 +319,7 @@
       n.addEventListener("change", function () { if (!el.summaryCard.hidden) renderSummary(buildConfig()); });
     });
     el.generate.addEventListener("click", generate);
+    setupHowTo();
 
     // Warm the blank PDFs so the first Generate is instant (and surfaces missing files early).
     getBlank("816", PDF_816).catch(function () {});

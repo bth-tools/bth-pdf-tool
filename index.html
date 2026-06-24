@@ -12,6 +12,7 @@
       <h1>Bridge to Hope</h1>
       <p class="sub">First-To-Work attendance &amp; study-time auto-filler<br />
         <span class="muted">DHS 816 (class attendance), DHS 819 (unsupervised study) &amp; DHS 817 (monitored study)</span></p>
+      <button id="howToBtn" type="button" class="help-btn">How to use</button>
     </header>
 
     <section class="card">
@@ -32,9 +33,6 @@
         </label>
         <label>Educational institution
           <input id="institution" type="text" value="UHMC" autocomplete="off" />
-        </label>
-        <label>HANA ID# <span class="opt">(optional)</span>
-          <input id="hanaId" type="text" placeholder="leave blank if none" autocomplete="off" />
         </label>
       </div>
     </section>
@@ -111,6 +109,27 @@
       <span>Runs entirely in your browser. Nothing is uploaded or stored.</span>
     </footer>
   </main>
+
+  <div id="howToOverlay" class="modal-overlay" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="howToTitle">
+      <div class="modal-head">
+        <h2 id="howToTitle">Quick Reference Guide</h2>
+        <button id="howToClose" type="button" class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <ol class="guide-steps">
+        <li><strong>Choose your forms</strong> — check the forms you need (816, 817, and/or 819);
+          your BTH email says which ones.</li>
+        <li><strong>Enter your name and school.</strong></li>
+        <li><strong>Add your classes</strong> — type each class code in order; the times fill in
+          automatically.</li>
+        <li><strong>Set the month</strong> — it defaults to the current month; use the start/end day
+          options only for a partial month.</li>
+        <li><strong>Generate</strong> — your completed PDFs download automatically.</li>
+        <li><strong>Open each PDF</strong> in a reader that lets you fill and sign (such as Adobe
+          Acrobat Reader or Mac Preview), add your signature and date, and submit to BTH as usual.</li>
+      </ol>
+    </div>
+  </div>
 
   <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
   <script src="schedule.js"></script>

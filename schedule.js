@@ -54,6 +54,20 @@
     return (d.getMonth() + 1) + "/" + d.getDate();
   }
 
+  // Weekday letter for the form date column: M, Tu, W, Th (two letters for
+  // Tue/Thu so they're never ambiguous). Other weekdays return "" (not used
+  // by the Mon/Wed and Tue/Thu schedules, but safe to fall back).
+  var DAY_ABBR = { 1: "M", 2: "Tu", 3: "W", 4: "Th" };
+  function dayAbbr(d) {
+    return DAY_ABBR[d.getDay()] || "";
+  }
+
+  // "M 6/22", "Tu 6/23" — weekday letter + space + M/D.
+  function formatDateWithDay(d) {
+    var ab = dayAbbr(d);
+    return (ab ? ab + " " : "") + formatDate(d);
+  }
+
   /*
    * Build the ordered class blocks for a single day.
    * classes: [{ code, startMin?, endMin? }]
@@ -106,7 +120,7 @@
         rows.push({
           dateObj: date,
           isFirstOfDay: j === 0,
-          date: j === 0 ? formatDate(date) : "",
+          date: j === 0 ? formatDateWithDay(date) : "",
           code: b.code,
           start: formatTime(b.startMin),
           end: formatTime(b.endMin),
@@ -199,6 +213,8 @@
     parseTime: parseTime,
     formatTotal: formatTotal,
     formatDate: formatDate,
+    dayAbbr: dayAbbr,
+    formatDateWithDay: formatDateWithDay,
     buildBlocks: buildBlocks,
     qualifyingDates: qualifyingDates,
     buildRows: buildRows,
