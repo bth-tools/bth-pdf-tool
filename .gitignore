@@ -1,0 +1,6 @@
+# dev-only / not needed for the deployed static app
+node_modules/
+_dev_out/
+*.log
+.claude/
+package-lock.json
