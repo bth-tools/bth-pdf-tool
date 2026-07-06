@@ -1,4 +1,5 @@
 # dev-only / not needed for the deployed static app
+CLAUDE.md
 node_modules/
 _dev_out/
 *.log
