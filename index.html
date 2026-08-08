@@ -79,30 +79,34 @@
       <button id="addClass" type="button" class="ghost">+ Add class</button>
     </section>
 
+    <section class="card hours-panel" id="hoursPanel">
+      <h2>Hours summary <span class="opt">(updates as you type)</span></h2>
+      <p class="hint hp-note" id="hpNote">No forms are selected yet — select forms above to see
+        what they'll document. If selected, they would document:</p>
+      <div class="hours-lines" aria-live="polite">
+        <div class="hours-line" id="hpClassRow">
+          <span class="hp-label">Class attendance</span>
+          <span class="hp-val" id="hpClassVal">0 hrs/week</span>
+        </div>
+        <div class="hours-line" id="hpStudyRow">
+          <span class="hp-label">Study time</span>
+          <span class="hp-val" id="hpStudyVal">0 hrs/week</span>
+        </div>
+        <div class="hours-line total">
+          <span class="hp-label" id="hpTotalLabel">Total documented</span>
+          <span class="hp-val" id="hpTotalVal">0 hrs/week</span>
+        </div>
+      </div>
+      <p class="hint">Required hours vary by situation—confirm your requirement with your FTW
+        case manager or BTH Campus Contact.</p>
+    </section>
+
     <section class="card">
       <h2>Generate</h2>
       <div class="gen-row">
         <button id="generate" type="button" class="primary">Generate &amp; download selected forms</button>
       </div>
       <p id="status" class="status" role="status" aria-live="polite"></p>
-    </section>
-
-    <section class="card" id="summaryCard" hidden>
-      <h2>Weekly accountable hours <span class="opt">(informational)</span></h2>
-      <div class="dep-row">
-        <label>Youngest dependent
-          <select id="depAge">
-            <option value="20">Under 6 — need ≥ 20 hrs/week</option>
-            <option value="30">6 and over — need ≥ 30 hrs/week</option>
-          </select>
-        </label>
-      </div>
-      <table id="weekTable" class="weeks">
-        <thead><tr><th>Week (Mon–Sun)</th><th>Class + study hrs</th><th>Status</th></tr></thead>
-        <tbody></tbody>
-      </table>
-      <p class="hint">This is a helper only — it does not change the PDFs. Partial weeks at the
-        month edges will naturally be lower.</p>
     </section>
 
     <footer class="foot">

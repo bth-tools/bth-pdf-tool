@@ -32,8 +32,10 @@ and nothing is stored.
 - Leaves all signature / instructor / "Department Use" fields **blank** so the student
   signs in Adobe after download.
 - Overflows cleanly from page 1 to page 2 of each form.
-- Shows an informational weekly-hours summary (class + study combined) and flags weeks
-  below the threshold (≥ 20 hrs/week if youngest dependent is under 6; ≥ 30 hrs/week if 6+).
+- Shows a live hours summary below the Classes section (class attendance, study time, and
+  total hrs/week for the checked forms) that updates as classes, times, or form selections
+  change. The panel is informational only — required hours vary by situation and should be
+  confirmed with the FTW case manager or BTH Campus Contact.
 
 The filled PDFs stay **fillable**, so the student can still type corrections and sign in
 Adobe before submitting.

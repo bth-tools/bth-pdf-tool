@@ -126,15 +126,21 @@ button { font: inherit; cursor: pointer; }
 .status.err { color: var(--warn); }
 .status.ok { color: var(--ok); }
 
-.dep-row { margin-bottom: 12px; max-width: 360px; }
-table.weeks { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-.weeks th, .weeks td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
-.weeks th { color: var(--muted); font-weight: 600; font-size: 0.8rem; }
-.weeks td.short { color: var(--warn); font-weight: 600; }
-.weeks td.met { color: var(--ok); }
-.pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 0.78rem; }
-.pill.short { background: var(--warn-bg); color: var(--warn); }
-.pill.met { background: #eaf6ee; color: var(--ok); }
+/* Live hours summary panel (below Classes) */
+.hours-panel .hp-note { margin: 0 0 8px; }
+.hours-lines { max-width: 420px; }
+.hours-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 6px 2px;
+  font-size: 0.95rem;
+  color: var(--ink);
+}
+.hours-line .hp-val { font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.hours-line.total { border-top: 1px solid var(--line); margin-top: 2px; padding-top: 9px; font-weight: 600; }
+.hours-panel.preview .hours-line { color: var(--muted); }
 
 .foot { text-align: center; color: var(--muted); font-size: 0.8rem; margin-top: 10px; }
 

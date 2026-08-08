@@ -19,8 +19,10 @@
     month: $("month"), year: $("year"), startDay: $("startDay"), endDay: $("endDay"),
     dayStart: $("dayStart"), classList: $("classList"), addClass: $("addClass"),
     generate: $("generate"), status: $("status"),
-    summaryCard: $("summaryCard"), depAge: $("depAge"),
-    weekBody: document.querySelector("#weekTable tbody"),
+    hoursPanel: $("hoursPanel"), hpNote: $("hpNote"),
+    hpClassRow: $("hpClassRow"), hpClassVal: $("hpClassVal"),
+    hpStudyRow: $("hpStudyRow"), hpStudyVal: $("hpStudyVal"),
+    hpTotalLabel: $("hpTotalLabel"), hpTotalVal: $("hpTotalVal"),
     howToBtn: $("howToBtn"), howToOverlay: $("howToOverlay"),
     howToClose: $("howToClose")
   };
@@ -126,27 +128,39 @@
       row.querySelector(".c-start").placeholder = Sched.formatTime(b.startMin);
       row.querySelector(".c-end").placeholder = Sched.formatTime(b.endMin);
     });
-    if (!el.summaryCard.hidden) renderSummary(cfg);
+    renderHoursPanel(cfg);
   }
 
-  /* ---------- weekly summary ---------- */
+  /* ---------- live hours panel ---------- */
 
-  function renderSummary(cfg) {
-    if (!cfg.classes.length) { el.summaryCard.hidden = true; return; }
-    var res = Sched.compute(cfg);
-    var threshold = parseInt(el.depAge.value, 10);
-    el.weekBody.innerHTML = "";
-    res.weekly.forEach(function (w) {
-      var tr = document.createElement("tr");
-      var met = w.hours >= threshold;
-      tr.innerHTML =
-        "<td>" + w.label + "</td>" +
-        '<td class="' + (met ? "met" : "short") + '">' + w.hours + "</td>" +
-        '<td><span class="pill ' + (met ? "met" : "short") + '">' +
-          (met ? "meets " + threshold : "below " + threshold) + "</span></td>";
-      el.weekBody.appendChild(tr);
-    });
-    el.summaryCard.hidden = false;
+  // Weekly rate the forms document: class blocks land on Mon/Wed (DHS 816) and
+  // the same blocks mirror onto Tue/Thu as study time (DHS 819/817), so each
+  // category is one day's block minutes x 2 days per week.
+  function renderHoursPanel(cfg) {
+    if (!cfg) cfg = buildConfig();
+    var blocks = Sched.buildBlocks(cfg.classes, cfg.dayStartMin, BLOCK_MINUTES);
+    var dayMin = 0;
+    blocks.forEach(function (b) { dayMin += Math.max(0, b.endMin - b.startMin); });
+    var weekMin = dayMin * 2;
+
+    var want816 = el.form816.checked;
+    var wantStudy = el.form819.checked || el.form817.checked;
+    var anyForm = want816 || wantStudy;
+
+    // With no forms checked, preview what all categories would document.
+    var showClass = anyForm ? want816 : true;
+    var showStudy = anyForm ? wantStudy : true;
+    var totalMin = (showClass ? weekMin : 0) + (showStudy ? weekMin : 0);
+
+    var perWeek = Sched.formatTotal(weekMin) + " hrs/week";
+    el.hpClassRow.hidden = !showClass;
+    el.hpStudyRow.hidden = !showStudy;
+    el.hpClassVal.textContent = perWeek;
+    el.hpStudyVal.textContent = perWeek;
+    el.hpTotalVal.textContent = Sched.formatTotal(totalMin) + " hrs/week";
+    el.hpTotalLabel.textContent = anyForm ? "Total documented" : "Total they would document";
+    el.hpNote.hidden = anyForm;
+    el.hoursPanel.classList.toggle("preview", !anyForm);
   }
 
   /* ---------- PDF fetch + download ---------- */
@@ -242,8 +256,6 @@
         setTimeout(function () { download(job.bytes, job.filename); }, i * 350);
       });
 
-      renderSummary(cfg);
-
       var noun = jobs.length === 1 ? "PDF" : jobs.length + " PDFs";
       if (overflow > 0) {
         setStatus("Done — but " + overflow + " row(s) exceeded the forms’ capacity and were left off. " +
@@ -314,9 +326,8 @@
 
     el.addClass.addEventListener("click", function () { addClassRow(""); refreshPlaceholders(); });
     el.dayStart.addEventListener("input", refreshPlaceholders);
-    el.depAge.addEventListener("change", function () { renderSummary(buildConfig()); });
-    [el.month, el.year, el.startDay, el.endDay].forEach(function (n) {
-      n.addEventListener("change", function () { if (!el.summaryCard.hidden) renderSummary(buildConfig()); });
+    [el.form816, el.form819, el.form817].forEach(function (n) {
+      n.addEventListener("change", function () { renderHoursPanel(); });
     });
     el.generate.addEventListener("click", generate);
     setupHowTo();
