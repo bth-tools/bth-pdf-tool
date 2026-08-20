@@ -1,0 +1,1998 @@
+{
+  "test1_aug2026": {
+    "attendanceRows": [
+      {
+        "date": "M 8/3",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "9:30",
+        "end": "11:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:00",
+        "end": "12:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "ECON 130",
+        "start": "12:30",
+        "end": "2:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "W 8/5",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "9:30",
+        "end": "11:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:00",
+        "end": "12:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "ECON 130",
+        "start": "12:30",
+        "end": "2:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "M 8/10",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "9:30",
+        "end": "11:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:00",
+        "end": "12:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "ECON 130",
+        "start": "12:30",
+        "end": "2:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "W 8/12",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "9:30",
+        "end": "11:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:00",
+        "end": "12:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "ECON 130",
+        "start": "12:30",
+        "end": "2:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "M 8/17",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "9:30",
+        "end": "11:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:00",
+        "end": "12:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "ECON 130",
+        "start": "12:30",
+        "end": "2:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "W 8/19",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "9:30",
+        "end": "11:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:00",
+        "end": "12:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "ECON 130",
+        "start": "12:30",
+        "end": "2:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "M 8/24",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "9:30",
+        "end": "11:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:00",
+        "end": "12:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "ECON 130",
+        "start": "12:30",
+        "end": "2:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "W 8/26",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "9:30",
+        "end": "11:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:00",
+        "end": "12:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "ECON 130",
+        "start": "12:30",
+        "end": "2:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "M 8/31",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "9:30",
+        "end": "11:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:00",
+        "end": "12:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "ECON 130",
+        "start": "12:30",
+        "end": "2:00",
+        "total": "1.5",
+        "hours": 1.5
+      }
+    ],
+    "studyRows": [
+      {
+        "date": "Tu 8/4",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "9:30",
+        "end": "11:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:00",
+        "end": "12:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "ECON 130",
+        "start": "12:30",
+        "end": "2:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "Th 8/6",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "9:30",
+        "end": "11:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:00",
+        "end": "12:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "ECON 130",
+        "start": "12:30",
+        "end": "2:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "Tu 8/11",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "9:30",
+        "end": "11:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:00",
+        "end": "12:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "ECON 130",
+        "start": "12:30",
+        "end": "2:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "Th 8/13",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "9:30",
+        "end": "11:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:00",
+        "end": "12:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "ECON 130",
+        "start": "12:30",
+        "end": "2:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "Tu 8/18",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "9:30",
+        "end": "11:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:00",
+        "end": "12:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "ECON 130",
+        "start": "12:30",
+        "end": "2:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "Th 8/20",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "9:30",
+        "end": "11:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:00",
+        "end": "12:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "ECON 130",
+        "start": "12:30",
+        "end": "2:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "Tu 8/25",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "9:30",
+        "end": "11:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:00",
+        "end": "12:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "ECON 130",
+        "start": "12:30",
+        "end": "2:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "Th 8/27",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "9:30",
+        "end": "11:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:00",
+        "end": "12:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "ECON 130",
+        "start": "12:30",
+        "end": "2:00",
+        "total": "1.5",
+        "hours": 1.5
+      }
+    ],
+    "weekly": [
+      {
+        "label": "8/3–8/9",
+        "hours": 24
+      },
+      {
+        "label": "8/10–8/16",
+        "hours": 24
+      },
+      {
+        "label": "8/17–8/23",
+        "hours": 24
+      },
+      {
+        "label": "8/24–8/30",
+        "hours": 24
+      },
+      {
+        "label": "8/31–9/6",
+        "hours": 6
+      }
+    ],
+    "monthYearLabel": "August 2026",
+    "monAbbr": "Aug"
+  },
+  "test1_clip": {
+    "attendanceRows": [
+      {
+        "date": "W 8/5",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "9:30",
+        "end": "11:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:00",
+        "end": "12:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "ECON 130",
+        "start": "12:30",
+        "end": "2:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "M 8/10",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "9:30",
+        "end": "11:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:00",
+        "end": "12:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "ECON 130",
+        "start": "12:30",
+        "end": "2:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "W 8/12",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "9:30",
+        "end": "11:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:00",
+        "end": "12:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "ECON 130",
+        "start": "12:30",
+        "end": "2:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "M 8/17",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "9:30",
+        "end": "11:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:00",
+        "end": "12:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "ECON 130",
+        "start": "12:30",
+        "end": "2:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "W 8/19",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "9:30",
+        "end": "11:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:00",
+        "end": "12:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "ECON 130",
+        "start": "12:30",
+        "end": "2:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "M 8/24",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "9:30",
+        "end": "11:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:00",
+        "end": "12:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "ECON 130",
+        "start": "12:30",
+        "end": "2:00",
+        "total": "1.5",
+        "hours": 1.5
+      }
+    ],
+    "studyRows": [
+      {
+        "date": "Th 8/6",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "9:30",
+        "end": "11:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:00",
+        "end": "12:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "ECON 130",
+        "start": "12:30",
+        "end": "2:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "Tu 8/11",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "9:30",
+        "end": "11:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:00",
+        "end": "12:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "ECON 130",
+        "start": "12:30",
+        "end": "2:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "Th 8/13",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "9:30",
+        "end": "11:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:00",
+        "end": "12:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "ECON 130",
+        "start": "12:30",
+        "end": "2:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "Tu 8/18",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "9:30",
+        "end": "11:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:00",
+        "end": "12:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "ECON 130",
+        "start": "12:30",
+        "end": "2:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "Th 8/20",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "9:30",
+        "end": "11:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:00",
+        "end": "12:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "ECON 130",
+        "start": "12:30",
+        "end": "2:00",
+        "total": "1.5",
+        "hours": 1.5
+      }
+    ],
+    "weekly": [
+      {
+        "label": "8/3–8/9",
+        "hours": 12
+      },
+      {
+        "label": "8/10–8/16",
+        "hours": 24
+      },
+      {
+        "label": "8/17–8/23",
+        "hours": 24
+      },
+      {
+        "label": "8/24–8/30",
+        "hours": 6
+      }
+    ],
+    "monthYearLabel": "August 2026",
+    "monAbbr": "Aug"
+  },
+  "test1_override": {
+    "attendanceRows": [
+      {
+        "date": "M 8/3",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "10:00",
+        "end": "11:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:30",
+        "end": "1:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "W 8/5",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "10:00",
+        "end": "11:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:30",
+        "end": "1:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "M 8/10",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "10:00",
+        "end": "11:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:30",
+        "end": "1:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "W 8/12",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "10:00",
+        "end": "11:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:30",
+        "end": "1:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "M 8/17",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "10:00",
+        "end": "11:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:30",
+        "end": "1:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "W 8/19",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "10:00",
+        "end": "11:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:30",
+        "end": "1:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "M 8/24",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "10:00",
+        "end": "11:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:30",
+        "end": "1:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "W 8/26",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "10:00",
+        "end": "11:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:30",
+        "end": "1:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "M 8/31",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "10:00",
+        "end": "11:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:30",
+        "end": "1:00",
+        "total": "1.5",
+        "hours": 1.5
+      }
+    ],
+    "studyRows": [
+      {
+        "date": "Tu 8/4",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "10:00",
+        "end": "11:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:30",
+        "end": "1:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "Th 8/6",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "10:00",
+        "end": "11:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:30",
+        "end": "1:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "Tu 8/11",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "10:00",
+        "end": "11:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:30",
+        "end": "1:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "Th 8/13",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "10:00",
+        "end": "11:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:30",
+        "end": "1:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "Tu 8/18",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "10:00",
+        "end": "11:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:30",
+        "end": "1:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "Th 8/20",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "10:00",
+        "end": "11:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:30",
+        "end": "1:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "Tu 8/25",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "10:00",
+        "end": "11:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:30",
+        "end": "1:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "Th 8/27",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "10:00",
+        "end": "11:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:30",
+        "end": "1:00",
+        "total": "1.5",
+        "hours": 1.5
+      }
+    ],
+    "weekly": [
+      {
+        "label": "8/3–8/9",
+        "hours": 18
+      },
+      {
+        "label": "8/10–8/16",
+        "hours": 18
+      },
+      {
+        "label": "8/17–8/23",
+        "hours": 18
+      },
+      {
+        "label": "8/24–8/30",
+        "hours": 18
+      },
+      {
+        "label": "8/31–9/6",
+        "hours": 4.5
+      }
+    ],
+    "monthYearLabel": "August 2026",
+    "monAbbr": "Aug"
+  },
+  "test1_mar2026": {
+    "attendanceRows": [
+      {
+        "date": "M 3/2",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "9:30",
+        "end": "11:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:00",
+        "end": "12:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "ECON 130",
+        "start": "12:30",
+        "end": "2:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "W 3/4",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "9:30",
+        "end": "11:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:00",
+        "end": "12:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "ECON 130",
+        "start": "12:30",
+        "end": "2:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "M 3/9",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "9:30",
+        "end": "11:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:00",
+        "end": "12:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "ECON 130",
+        "start": "12:30",
+        "end": "2:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "W 3/11",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "9:30",
+        "end": "11:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:00",
+        "end": "12:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "ECON 130",
+        "start": "12:30",
+        "end": "2:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "M 3/16",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "9:30",
+        "end": "11:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:00",
+        "end": "12:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "ECON 130",
+        "start": "12:30",
+        "end": "2:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "W 3/18",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "9:30",
+        "end": "11:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:00",
+        "end": "12:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "ECON 130",
+        "start": "12:30",
+        "end": "2:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "M 3/23",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "9:30",
+        "end": "11:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:00",
+        "end": "12:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "ECON 130",
+        "start": "12:30",
+        "end": "2:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "W 3/25",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "9:30",
+        "end": "11:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:00",
+        "end": "12:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "ECON 130",
+        "start": "12:30",
+        "end": "2:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "M 3/30",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "9:30",
+        "end": "11:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:00",
+        "end": "12:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "ECON 130",
+        "start": "12:30",
+        "end": "2:00",
+        "total": "1.5",
+        "hours": 1.5
+      }
+    ],
+    "studyRows": [
+      {
+        "date": "Tu 3/3",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "9:30",
+        "end": "11:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:00",
+        "end": "12:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "ECON 130",
+        "start": "12:30",
+        "end": "2:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "Th 3/5",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "9:30",
+        "end": "11:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:00",
+        "end": "12:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "ECON 130",
+        "start": "12:30",
+        "end": "2:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "Tu 3/10",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "9:30",
+        "end": "11:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:00",
+        "end": "12:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "ECON 130",
+        "start": "12:30",
+        "end": "2:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "Th 3/12",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "9:30",
+        "end": "11:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:00",
+        "end": "12:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "ECON 130",
+        "start": "12:30",
+        "end": "2:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "Tu 3/17",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "9:30",
+        "end": "11:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:00",
+        "end": "12:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "ECON 130",
+        "start": "12:30",
+        "end": "2:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "Th 3/19",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "9:30",
+        "end": "11:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:00",
+        "end": "12:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "ECON 130",
+        "start": "12:30",
+        "end": "2:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "Tu 3/24",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "9:30",
+        "end": "11:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:00",
+        "end": "12:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "ECON 130",
+        "start": "12:30",
+        "end": "2:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "Th 3/26",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "9:30",
+        "end": "11:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:00",
+        "end": "12:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "ECON 130",
+        "start": "12:30",
+        "end": "2:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "Tu 3/31",
+        "code": "ACC 201",
+        "start": "8:00",
+        "end": "9:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "MATH 115",
+        "start": "9:30",
+        "end": "11:00",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "BLAW 200",
+        "start": "11:00",
+        "end": "12:30",
+        "total": "1.5",
+        "hours": 1.5
+      },
+      {
+        "date": "",
+        "code": "ECON 130",
+        "start": "12:30",
+        "end": "2:00",
+        "total": "1.5",
+        "hours": 1.5
+      }
+    ],
+    "weekly": [
+      {
+        "label": "3/2–3/8",
+        "hours": 24
+      },
+      {
+        "label": "3/9–3/15",
+        "hours": 24
+      },
+      {
+        "label": "3/16–3/22",
+        "hours": 24
+      },
+      {
+        "label": "3/23–3/29",
+        "hours": 24
+      },
+      {
+        "label": "3/30–4/5",
+        "hours": 12
+      }
+    ],
+    "monthYearLabel": "March 2026",
+    "monAbbr": "Mar"
+  }
+}

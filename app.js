@@ -18,6 +18,7 @@
     name: $("name"), institution: $("institution"),
     month: $("month"), year: $("year"), startDay: $("startDay"), endDay: $("endDay"),
     dayStart: $("dayStart"), classList: $("classList"), addClass: $("addClass"),
+    classError: $("classError"),
     generate: $("generate"), status: $("status"),
     hoursPanel: $("hoursPanel"), hpNote: $("hpNote"),
     hpClassRow: $("hpClassRow"), hpClassVal: $("hpClassVal"),
@@ -57,39 +58,103 @@
     });
   }
 
-  function addClassRow(code) {
+  var DAY_OPTIONS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+  function addMeetingRow(item) {
+    var list = item.querySelector(".meeting-list");
     var row = document.createElement("div");
-    row.className = "class-row";
+    row.className = "meeting-row";
+    var dayOpts = '<option value="">Day</option>';
+    DAY_OPTIONS.forEach(function (d, i) {
+      dayOpts += '<option value="' + i + '">' + d + "</option>";
+    });
     row.innerHTML =
-      '<input class="c-code" type="text" placeholder="e.g. ACC 201" autocomplete="off" />' +
-      '<input class="c-start" type="text" placeholder="auto" inputmode="numeric" />' +
-      '<input class="c-end" type="text" placeholder="auto" inputmode="numeric" />' +
-      '<button class="del" type="button" title="Remove">×</button>';
-    row.querySelector(".c-code").value = code || "";
+      '<select class="m-day" aria-label="Day">' + dayOpts + "</select>" +
+      '<input class="m-start" type="time" aria-label="Starts" />' +
+      '<input class="m-end" type="time" aria-label="Ends" />' +
+      '<button class="del" type="button" title="Remove this day">×</button>';
     row.querySelector(".del").addEventListener("click", function () {
       row.remove();
       refreshPlaceholders();
     });
-    row.addEventListener("input", refreshPlaceholders);
-    el.classList.appendChild(row);
+    list.appendChild(row);
     return row;
+  }
+
+  function addClassRow(code) {
+    var item = document.createElement("div");
+    item.className = "class-item";
+    item.innerHTML =
+      '<div class="class-row">' +
+        '<input class="c-code" type="text" placeholder="e.g. ACC 201" autocomplete="off" />' +
+        '<input class="c-start" type="text" placeholder="auto" inputmode="numeric" />' +
+        '<input class="c-end" type="text" placeholder="auto" inputmode="numeric" />' +
+        '<button class="del" type="button" title="Remove">×</button>' +
+      "</div>" +
+      '<label class="check meets-line">' +
+        '<input class="c-meets" type="checkbox" /> Does this class meet at set times?' +
+      "</label>" +
+      '<div class="meetings" hidden>' +
+        '<div class="meeting-head"><span>Day</span><span>Starts</span><span>Ends</span><span></span></div>' +
+        '<div class="meeting-list"></div>' +
+        '<button class="add-meeting ghost small" type="button">+ Add another day</button>' +
+      "</div>";
+    item.querySelector(".c-code").value = code || "";
+    item.querySelector(".class-row .del").addEventListener("click", function () {
+      item.remove();
+      refreshPlaceholders();
+    });
+    var meets = item.querySelector(".c-meets");
+    var meetings = item.querySelector(".meetings");
+    meets.addEventListener("change", function () {
+      item.classList.toggle("scheduled", meets.checked);
+      meetings.hidden = !meets.checked;
+      if (meets.checked && !item.querySelector(".meeting-row")) addMeetingRow(item);
+      refreshPlaceholders();
+    });
+    item.querySelector(".add-meeting").addEventListener("click", function () {
+      addMeetingRow(item);
+      refreshPlaceholders();
+    });
+    item.addEventListener("input", refreshPlaceholders);
+    item.addEventListener("change", refreshPlaceholders);
+    el.classList.appendChild(item);
+    return item;
   }
 
   /* ---------- read inputs ---------- */
 
   function readClasses() {
-    var rows = Array.prototype.slice.call(el.classList.querySelectorAll(".class-row"));
+    var items = Array.prototype.slice.call(el.classList.querySelectorAll(".class-item"));
     var out = [];
-    rows.forEach(function (row) {
-      var code = row.querySelector(".c-code").value.trim();
+    items.forEach(function (item) {
+      var code = item.querySelector(".c-code").value.trim();
       if (!code) return;
-      var startMin = Sched.parseTime(row.querySelector(".c-start").value);
-      var endMin = Sched.parseTime(row.querySelector(".c-end").value);
-      out.push({
-        code: code,
-        startMin: startMin != null ? startMin : null,
-        endMin: endMin != null ? endMin : null
-      });
+      var meets = item.querySelector(".c-meets").checked;
+      if (meets) {
+        // Scheduled class: collect the completed meeting entries.
+        var meetings = [];
+        var incomplete = 0;
+        Array.prototype.slice.call(item.querySelectorAll(".meeting-row")).forEach(function (mr) {
+          var day = mr.querySelector(".m-day").value;
+          var s = Sched.parseTime(mr.querySelector(".m-start").value);
+          var e = Sched.parseTime(mr.querySelector(".m-end").value);
+          if (day !== "" && s != null && e != null) {
+            meetings.push({ day: parseInt(day, 10), startMin: s, endMin: e });
+          } else if (day !== "" || s != null || e != null) {
+            incomplete++;
+          }
+        });
+        out.push({ code: code, meetsSetTimes: true, meetings: meetings, incompleteMeetings: incomplete });
+      } else {
+        var startMin = Sched.parseTime(item.querySelector(".c-start").value);
+        var endMin = Sched.parseTime(item.querySelector(".c-end").value);
+        out.push({
+          code: code,
+          startMin: startMin != null ? startMin : null,
+          endMin: endMin != null ? endMin : null
+        });
+      }
     });
     return out;
   }
@@ -113,35 +178,46 @@
     };
   }
 
-  /* ---------- live auto-time placeholders ---------- */
+  /* ---------- live auto-time placeholders + inline schedule error ---------- */
+
+  function showClassError(message) {
+    el.classError.textContent = message || "";
+    el.classError.hidden = !message;
+  }
 
   function refreshPlaceholders() {
     var cfg = buildConfig();
-    var blocks = Sched.buildBlocks(cfg.classes, cfg.dayStartMin, BLOCK_MINUTES);
-    var rows = Array.prototype.slice.call(el.classList.querySelectorAll(".class-row"));
-    var bi = 0;
-    rows.forEach(function (row) {
-      var code = row.querySelector(".c-code").value.trim();
+    var tmpl = Sched.buildWeekTemplate(cfg);
+    if (tmpl.error) {
+      showClassError(tmpl.error.message);
+      renderHoursPanel(cfg, null);
+      return;
+    }
+    showClassError(null);
+    var items = Array.prototype.slice.call(el.classList.querySelectorAll(".class-item"));
+    var ci = 0; // index into cfg.classes (rows with a code)
+    items.forEach(function (item) {
+      var code = item.querySelector(".c-code").value.trim();
       if (!code) return;
-      var b = blocks[bi++];
-      if (!b) return;
-      row.querySelector(".c-start").placeholder = Sched.formatTime(b.startMin);
-      row.querySelector(".c-end").placeholder = Sched.formatTime(b.endMin);
+      var ph = tmpl.asyncPlaceholders[ci++];
+      if (!ph) return; // scheduled class: its times come from the meetings
+      item.querySelector(".c-start").placeholder = Sched.formatTime(ph.startMin);
+      item.querySelector(".c-end").placeholder = Sched.formatTime(ph.endMin);
     });
-    renderHoursPanel(cfg);
+    renderHoursPanel(cfg, tmpl);
   }
 
   /* ---------- live hours panel ---------- */
 
-  // Weekly rate the forms document: class blocks land on Mon/Wed (DHS 816) and
-  // the same blocks mirror onto Tue/Thu as study time (DHS 819/817), so each
-  // category is one day's block minutes x 2 days per week.
-  function renderHoursPanel(cfg) {
+  // Weekly totals come straight from the real timetable template: class hours
+  // are every attendance block in the week (async Mon/Wed blocks + scheduled
+  // meetings), study hours are the 1:1 study blocks laid out around them.
+  function renderHoursPanel(cfg, tmpl) {
     if (!cfg) cfg = buildConfig();
-    var blocks = Sched.buildBlocks(cfg.classes, cfg.dayStartMin, BLOCK_MINUTES);
-    var dayMin = 0;
-    blocks.forEach(function (b) { dayMin += Math.max(0, b.endMin - b.startMin); });
-    var weekMin = dayMin * 2;
+    if (tmpl === undefined) tmpl = Sched.buildWeekTemplate(cfg);
+    var broken = !tmpl || tmpl.error;
+    var classMin = broken ? 0 : tmpl.classWeekMin;
+    var studyMin = broken ? 0 : tmpl.studyWeekMin;
 
     var want816 = el.form816.checked;
     var wantStudy = el.form819.checked || el.form817.checked;
@@ -150,14 +226,13 @@
     // With no forms checked, preview what all categories would document.
     var showClass = anyForm ? want816 : true;
     var showStudy = anyForm ? wantStudy : true;
-    var totalMin = (showClass ? weekMin : 0) + (showStudy ? weekMin : 0);
+    var totalMin = (showClass ? classMin : 0) + (showStudy ? studyMin : 0);
 
-    var perWeek = Sched.formatTotal(weekMin) + " hrs/week";
     el.hpClassRow.hidden = !showClass;
     el.hpStudyRow.hidden = !showStudy;
-    el.hpClassVal.textContent = perWeek;
-    el.hpStudyVal.textContent = perWeek;
-    el.hpTotalVal.textContent = Sched.formatTotal(totalMin) + " hrs/week";
+    el.hpClassVal.textContent = broken ? "—" : Sched.formatTotal(classMin) + " hrs/week";
+    el.hpStudyVal.textContent = broken ? "—" : Sched.formatTotal(studyMin) + " hrs/week";
+    el.hpTotalVal.textContent = broken ? "—" : Sched.formatTotal(totalMin) + " hrs/week";
     el.hpTotalLabel.textContent = anyForm ? "Total documented" : "Total they would document";
     el.hpNote.hidden = anyForm;
     el.hoursPanel.classList.toggle("preview", !anyForm);
@@ -213,11 +288,27 @@
     if (cfg.startDay && cfg.endDay && cfg.startDay > cfg.endDay) {
       setStatus("Start day is after end day.", "err"); return;
     }
+    for (var ci = 0; ci < cfg.classes.length; ci++) {
+      var cc = cfg.classes[ci];
+      if (cc.meetsSetTimes && !cc.meetings.length) {
+        setStatus("“" + cc.code + "” is set to meet at set times — add its day and times.", "err");
+        return;
+      }
+      if (cc.meetsSetTimes && cc.incompleteMeetings) {
+        setStatus("One of the meeting days for “" + cc.code + "” is missing its day or times.", "err");
+        return;
+      }
+    }
 
     el.generate.disabled = true;
     setStatus("Generating…");
     try {
       var res = Sched.compute(cfg);
+      if (res.error) {
+        showClassError(res.error.message);
+        setStatus(res.error.message, "err");
+        return;
+      }
       var header = {
         name: cfg.name,
         institution: cfg.institution,

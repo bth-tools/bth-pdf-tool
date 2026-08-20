@@ -18,14 +18,30 @@ and nothing is stored.
 
 ## What it does
 
-- Finds every Mon/Wed (→ DHS 816) and every Tue/Thu (→ DHS 819 and DHS 817) in the chosen
-  month, with an optional start-day / end-day clip for partial months.
+The tool is a **weekly-timetable builder**: each class contributes weekly attendance
+blocks, study blocks fill in around them, and the PDFs report the timetable.
+
+- Each class row asks one question: **"Does this class meet at set times?"** (off by
+  default).
+  - **Off** — the class is treated as online/asynchronous: it auto-sequences as
+    back-to-back 90-minute blocks on Mon & Wed from the day start time, exactly as
+    before. You can still override an individual block's start/end.
+  - **On** — the row expands into one or more meetings (Day + Starts + Ends, with
+    "+ Add another day"). Those meetings claim their exact days and times on the forms.
+- Async blocks automatically **skip over** any time already claimed by a scheduled class
+  on the same day; no two blocks ever overlap. Two scheduled classes that collide produce
+  a plain-language inline error instead of a broken PDF.
+- **Study time is 1:1 with class time**: every class earns weekly study hours equal to
+  its weekly class hours (async classes = 3 hrs/week; scheduled = the sum of its meeting
+  durations). Study is laid out in 1.5-hour blocks (the final block shorter or longer to
+  hit the exact total) on Tue & Thu from the day start time, skipping claimed intervals,
+  overflowing to Fri, Sat, Sun, Mon, Wed if needed.
+- DHS 816 lists **every** day of the week that carries attendance blocks that month;
+  DHS 819/817 list every day carrying study blocks — with an optional start-day /
+  end-day clip for partial months. Day letters cover the full week (M, Tu, W, Th, F,
+  Sa, Su).
 - Lets you pick any combination of the three forms with checkboxes (none selected by
   default); generates and downloads only the ones you check.
-- For each date, writes one row per class in the order you list them, with start time,
-  end time, and total decimal hours.
-- Classes auto-sequence as back-to-back 90-minute blocks from the day start time; you can
-  override any individual block's start/end.
 - Prints the date only on the **first** class row of each day (matching the official forms).
 - Formats exactly like the paper forms: dates `M/D` (no leading zeros), times `H:MM` with
   no AM/PM, totals as decimals (`1.5`).
@@ -33,9 +49,13 @@ and nothing is stored.
   signs in Adobe after download.
 - Overflows cleanly from page 1 to page 2 of each form.
 - Shows a live hours summary below the Classes section (class attendance, study time, and
-  total hrs/week for the checked forms) that updates as classes, times, or form selections
-  change. The panel is informational only — required hours vary by situation and should be
-  confirmed with the FTW case manager or BTH Campus Contact.
+  total hrs/week for the checked forms) that reflects the real timetable totals and
+  updates as classes, meetings, or form selections change. The panel is informational
+  only — required hours vary by situation and should be confirmed with the FTW case
+  manager or BTH Campus Contact.
+
+Students with only online/asynchronous classes see **no change at all** — leaving every
+toggle off produces output identical to the previous version of the tool.
 
 The filled PDFs stay **fillable**, so the student can still type corrections and sign in
 Adobe before submitting.
@@ -114,13 +134,16 @@ Then open <http://localhost:8000/> in your browser.
 
 1. Tick the form(s) you want: Class Attendance (816), Unsupervised Study (819), and/or
    Monitored Study (817). Any combination works.
-2. Enter the student name and institution (defaults to **UHMC**); HANA ID# is optional.
+2. Enter the student name and institution (defaults to **UHMC**).
 3. Pick the month and year (default to the current month/year). Optionally set start/end
    day for a partial month.
 4. Set the day start time (default **8:00**) and list the classes in order. Times fill in
    automatically; override a block only if needed.
-5. Click **Generate & download selected forms**.
-6. Open each PDF in Adobe, review, sign (and have the monitor complete Section 1 of the
+5. For a class that meets at a set day and time (a Zoom class or an in-person class),
+   turn on **"Does this class meet at set times?"** and enter its day(s) and start/end
+   times. Online classes with no set meeting time: skip this — the tool handles them.
+6. Click **Generate & download selected forms**.
+7. Open each PDF in Adobe, review, sign (and have the monitor complete Section 1 of the
    817 if generated), and submit.
 
 ---
@@ -135,11 +158,15 @@ there is no server and no use of browser storage. Refreshing the page clears all
 ## Developer note (optional)
 
 `_dev_test.js` runs the same `schedule.js` / `pdffill.js` logic in Node against the real
-blank PDFs to regression-test the output (used during development):
+blank PDFs to run the acceptance tests (all-async regression against `_dev_golden.json`,
+the mixed scheduled/async scenario, collision detection, odd evening hours, and hours-panel
+consistency):
 
 ```bash
 npm install pdf-lib
 node _dev_test.js
 ```
 
-It writes filled PDFs to `_dev_out/` for inspection. Not needed to run or deploy the app.
+It writes filled PDFs to `_dev_out/` for inspection. `_dev_golden.json` is a snapshot of
+the original tool's output for all-async configs — the suite fails if that behavior ever
+changes. Not needed to run or deploy the app.

@@ -2,6 +2,18 @@
  * schedule.js — pure scheduling + formatting logic for the Bridge to Hope PDF filler.
  * No DOM, no pdf-lib. Shared by the browser app and the Node test harness.
  * Exposed as window.BTHSchedule (browser) and module.exports (node).
+ *
+ * The tool is a weekly-timetable builder:
+ *  - SCHEDULED classes (meetings: [{day, startMin, endMin}]) claim their exact
+ *    days and times. Immovable.
+ *  - ASYNC classes (no meetings) auto-sequence back-to-back on the default
+ *    attendance days (Mon & Wed) from the day start time, skipping any time
+ *    interval already claimed by a scheduled class on that day.
+ *  - STUDY earns 1:1 with weekly class hours per class, laid out in blocks
+ *    (default 1.5 hr, final block adjusted to hit the exact total) on the
+ *    default study days (Tue & Thu), overflowing to Fri, Sat, Sun, Mon, Wed.
+ * When no class is scheduled, everything reduces exactly to the original
+ * Mon/Wed + mirrored Tue/Thu behavior.
  */
 (function (root, factory) {
   if (typeof module === "object" && module.exports) module.exports = factory();
@@ -17,6 +29,16 @@
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
   ];
+  var DAY_NAMES = [
+    "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
+  ];
+
+  // Default attendance days for async classes, default study days, and the
+  // order extra study days are used when Tue/Thu can't hold everything.
+  var ATTEND_DAYS = [1, 3];            // Mon, Wed
+  var STUDY_DAYS = [2, 4];             // Tue, Thu
+  var STUDY_OVERFLOW = [5, 6, 0, 1, 3]; // Fri, Sat, Sun, Mon, Wed
+  var DAY_END_MIN = 24 * 60;           // no block may run past midnight
 
   function pad2(n) { return n < 10 ? "0" + n : "" + n; }
 
@@ -54,10 +76,9 @@
     return (d.getMonth() + 1) + "/" + d.getDate();
   }
 
-  // Weekday letter for the form date column: M, Tu, W, Th (two letters for
-  // Tue/Thu so they're never ambiguous). Other weekdays return "" (not used
-  // by the Mon/Wed and Tue/Thu schedules, but safe to fall back).
-  var DAY_ABBR = { 1: "M", 2: "Tu", 3: "W", 4: "Th" };
+  // Weekday letter for the form date column. Two letters where one would be
+  // ambiguous: M, Tu, W, Th, F, Sa, Su.
+  var DAY_ABBR = { 0: "Su", 1: "M", 2: "Tu", 3: "W", 4: "Th", 5: "F", 6: "Sa" };
   function dayAbbr(d) {
     return DAY_ABBR[d.getDay()] || "";
   }
@@ -68,12 +89,14 @@
     return (ab ? ab + " " : "") + formatDate(d);
   }
 
+  function isScheduled(c) {
+    return !!(c.meetings && c.meetings.length);
+  }
+
   /*
-   * Build the ordered class blocks for a single day.
+   * Build the ordered class blocks for a single day (original async behavior,
+   * kept intact for the no-scheduled-classes path and the test harness).
    * classes: [{ code, startMin?, endMin? }]
-   * dayStartMin: default start for auto-sequencing
-   * blockMinutes: default block length (90)
-   * Auto-sequences back-to-back from dayStartMin unless a block carries its own times.
    */
   function buildBlocks(classes, dayStartMin, blockMinutes) {
     var blocks = [];
@@ -86,6 +109,225 @@
       cursor = end; // next class chains off this one's end
     }
     return blocks;
+  }
+
+  // First start >= from where [start, start+dur) touches none of the claimed
+  // intervals. Intervals need not be sorted.
+  function nextFreeStart(from, dur, claimed) {
+    var s = from;
+    var moved = true;
+    while (moved) {
+      moved = false;
+      for (var i = 0; i < claimed.length; i++) {
+        var iv = claimed[i];
+        if (s < iv.endMin && iv.startMin < s + dur) {
+          s = iv.endMin;
+          moved = true;
+        }
+      }
+    }
+    return s;
+  }
+
+  // Validate scheduled meetings: each must run forward, and no two claimed
+  // intervals may overlap on the same day. Returns null or { message }.
+  function validateMeetings(classes) {
+    var perDay = {}; // day -> [{code, startMin, endMin}]
+    for (var i = 0; i < classes.length; i++) {
+      var c = classes[i];
+      if (!isScheduled(c)) continue;
+      for (var j = 0; j < c.meetings.length; j++) {
+        var m = c.meetings[j];
+        if (m.endMin <= m.startMin) {
+          return { message: "Check the times for “" + c.code + "” — its end time must be after its start time." };
+        }
+        if (!perDay[m.day]) perDay[m.day] = [];
+        perDay[m.day].push({ code: c.code, startMin: m.startMin, endMin: m.endMin });
+      }
+    }
+    var days = Object.keys(perDay);
+    for (var d = 0; d < days.length; d++) {
+      var list = perDay[days[d]].slice().sort(function (a, b) { return a.startMin - b.startMin; });
+      for (var k = 1; k < list.length; k++) {
+        if (list[k].startMin < list[k - 1].endMin) {
+          var dayName = DAY_NAMES[days[d]];
+          if (list[k].code === list[k - 1].code) {
+            return { message: "“" + list[k].code + "” has two meeting times that overlap on " + dayName + " — check the times." };
+          }
+          return {
+            message: "These two classes overlap on " + dayName + " — check the times. (" +
+              list[k - 1].code + " and " + list[k].code + ")"
+          };
+        }
+      }
+    }
+    return null;
+  }
+
+  // Split a class's weekly study minutes into blocks: default-size blocks with
+  // the final one shorter or longer so the exact total is always hit.
+  function studyChunks(totalMin, blockMinutes) {
+    var chunks = [];
+    var rem = totalMin;
+    while (rem >= blockMinutes * 1.5) {
+      chunks.push(blockMinutes);
+      rem -= blockMinutes;
+    }
+    if (rem > 0) chunks.push(rem);
+    return chunks;
+  }
+
+  /*
+   * Build the weekly timetable template from a config.
+   * Returns {
+   *   error: null | { message },
+   *   attendance: [ [ {code,startMin,endMin,scheduled} ] x7 ],   // by getDay()
+   *   study:      [ [ {code,startMin,endMin} ] x7 ],
+   *   asyncPlaceholders: [ {startMin,endMin} | null per class ], // Monday times
+   *   classWeekMin, studyWeekMin
+   * }
+   */
+  function buildWeekTemplate(config) {
+    var blockMinutes = config.blockMinutes || 90;
+    var dayStartMin = (config.dayStartMin != null) ? config.dayStartMin : 8 * 60;
+    var classes = config.classes || [];
+    var d, i, j;
+
+    var error = validateMeetings(classes);
+    if (error) return { error: error };
+
+    var attendance = [[], [], [], [], [], [], []];
+    var study = [[], [], [], [], [], [], []];
+    var asyncClasses = classes.filter(function (c) { return !isScheduled(c); });
+    var anyScheduled = classes.length !== asyncClasses.length;
+
+    // 1. Scheduled classes claim their exact days and times. Immovable.
+    for (i = 0; i < classes.length; i++) {
+      var c = classes[i];
+      if (!isScheduled(c)) continue;
+      for (j = 0; j < c.meetings.length; j++) {
+        var m = c.meetings[j];
+        attendance[m.day].push({ code: c.code, startMin: m.startMin, endMin: m.endMin, scheduled: true });
+      }
+    }
+
+    // 2. Async classes auto-sequence on Mon & Wed, skipping claimed intervals.
+    var asyncByDay = {}; // day -> blocks aligned with asyncClasses order
+    for (d = 0; d < ATTEND_DAYS.length; d++) {
+      var day = ATTEND_DAYS[d];
+      var claimed = attendance[day].slice();
+      var blocks = [];
+      var cursor = dayStartMin;
+      for (i = 0; i < asyncClasses.length; i++) {
+        var a = asyncClasses[i];
+        var start, end;
+        if (a.startMin != null) {
+          start = a.startMin; // explicit override wins, exactly as before
+          end = (a.endMin != null) ? a.endMin : start + blockMinutes;
+        } else {
+          start = nextFreeStart(cursor, blockMinutes, claimed);
+          end = (a.endMin != null) ? a.endMin : start + blockMinutes;
+        }
+        var b = { code: a.code, startMin: start, endMin: end, scheduled: false };
+        blocks.push(b);
+        attendance[day].push(b);
+        cursor = end;
+      }
+      asyncByDay[day] = blocks;
+    }
+
+    // Sort each day's attendance by start time (stable).
+    for (d = 0; d < 7; d++) {
+      var withIdx = attendance[d].map(function (b, idx) { return { b: b, idx: idx }; });
+      withIdx.sort(function (x, y) {
+        return (x.b.startMin - y.b.startMin) || (x.idx - y.idx);
+      });
+      attendance[d] = withIdx.map(function (x) { return x.b; });
+    }
+
+    // Per-class weekly class minutes (drives the 1:1 study rule).
+    var classMins = [];
+    var classWeekMin = 0;
+    for (i = 0; i < classes.length; i++) {
+      var mins = 0;
+      if (isScheduled(classes[i])) {
+        for (j = 0; j < classes[i].meetings.length; j++) {
+          mins += classes[i].meetings[j].endMin - classes[i].meetings[j].startMin;
+        }
+      } else {
+        var ai = asyncClasses.indexOf(classes[i]);
+        for (d = 0; d < ATTEND_DAYS.length; d++) {
+          var blk = asyncByDay[ATTEND_DAYS[d]][ai];
+          mins += Math.max(0, blk.endMin - blk.startMin);
+        }
+      }
+      classMins.push(mins);
+      classWeekMin += mins;
+    }
+
+    // 3. Study, 1:1 with class hours.
+    var studyWeekMin = 0;
+    if (!anyScheduled) {
+      // Original behavior, preserved exactly: study mirrors the class blocks
+      // onto Tue & Thu.
+      var monBlocks = asyncByDay[ATTEND_DAYS[0]]; // Mon and Wed are identical here
+      for (d = 0; d < STUDY_DAYS.length; d++) {
+        var sday = STUDY_DAYS[d];
+        for (i = 0; i < monBlocks.length; i++) {
+          var src = monBlocks[i];
+          study[sday].push({ code: src.code, startMin: src.startMin, endMin: src.endMin });
+          studyWeekMin += Math.max(0, src.endMin - src.startMin);
+        }
+      }
+    } else {
+      // Distribute each class's study blocks across Tue/Thu (alternating), with
+      // per-day cursors that skip every claimed attendance interval; overflow
+      // in the fixed order Fri, Sat, Sun, Mon, Wed.
+      var cursors = {};
+      for (d = 0; d < 7; d++) cursors[d] = dayStartMin;
+      for (i = 0; i < classes.length; i++) {
+        var chunks = studyChunks(classMins[i], blockMinutes);
+        for (j = 0; j < chunks.length; j++) {
+          var dur = chunks[j];
+          if (dur <= 0) continue;
+          var firstDay = STUDY_DAYS[j % 2];
+          var otherDay = STUDY_DAYS[(j + 1) % 2];
+          var tryDays = [firstDay, otherDay].concat(STUDY_OVERFLOW);
+          var placed = false;
+          for (var t = 0; t < tryDays.length; t++) {
+            var td = tryDays[t];
+            var s = nextFreeStart(cursors[td], dur, attendance[td]);
+            if (s + dur <= DAY_END_MIN) {
+              study[td].push({ code: classes[i].code, startMin: s, endMin: s + dur });
+              cursors[td] = s + dur;
+              studyWeekMin += dur;
+              placed = true;
+              break;
+            }
+          }
+          if (!placed) {
+            return { error: { message: "There isn’t room in the week for all the study hours — check the class times." } };
+          }
+        }
+      }
+    }
+
+    // Monday auto times for the UI's live placeholders (null for scheduled rows).
+    var asyncPlaceholders = classes.map(function (cl) {
+      if (isScheduled(cl)) return null;
+      var ai2 = asyncClasses.indexOf(cl);
+      var mb = asyncByDay[1][ai2];
+      return mb ? { startMin: mb.startMin, endMin: mb.endMin } : null;
+    });
+
+    return {
+      error: null,
+      attendance: attendance,
+      study: study,
+      asyncPlaceholders: asyncPlaceholders,
+      classWeekMin: classWeekMin,
+      studyWeekMin: studyWeekMin
+    };
   }
 
   /*
@@ -106,14 +348,15 @@
   }
 
   /*
-   * Build the row list for one form.
-   * Returns [{ date: "M/D"|"", code, start, end, total, hours, dateObj, isFirstOfDay }]
+   * Build the row list for one form from per-weekday template blocks.
+   * Returns [{ date: "Day M/D"|"", code, start, end, total, hours, dateObj, isFirstOfDay }]
    * Date string only present on the first row of each day's group.
    */
-  function buildRows(dates, blocks) {
+  function buildRowsFromTemplate(dates, blocksByDay) {
     var rows = [];
     for (var i = 0; i < dates.length; i++) {
       var date = dates[i];
+      var blocks = blocksByDay[date.getDay()] || [];
       for (var j = 0; j < blocks.length; j++) {
         var b = blocks[j];
         var mins = b.endMin - b.startMin;
@@ -130,6 +373,12 @@
       }
     }
     return rows;
+  }
+
+  // Original single-blocklist row builder (kept for compatibility/tests).
+  function buildRows(dates, blocks) {
+    var byDay = [blocks, blocks, blocks, blocks, blocks, blocks, blocks];
+    return buildRowsFromTemplate(dates, byDay);
   }
 
   // ISO-ish week key (Monday-start) for grouping weekly hours.
@@ -176,30 +425,44 @@
     });
   }
 
+  // Weekdays (getDay values) that carry at least one block, ascending.
+  function activeWeekdays(blocksByDay) {
+    var out = [];
+    for (var d = 0; d < 7; d++) {
+      if (blocksByDay[d] && blocksByDay[d].length) out.push(d);
+    }
+    return out;
+  }
+
   /*
    * Top-level: from a config object produce everything the app needs.
    * config = {
    *   name, institution, hanaId,
-   *   classes: [{code, startMin?, endMin?}],
+   *   classes: [{code, startMin?, endMin?, meetings?: [{day, startMin, endMin}]}],
    *   dayStartMin, blockMinutes, month (0-11), year, startDay, endDay
    * }
+   * Returns { error } when scheduled meetings collide, otherwise the full result.
    */
   function compute(config) {
-    var blockMinutes = config.blockMinutes || 90;
-    var dayStartMin = (config.dayStartMin != null) ? config.dayStartMin : 8 * 60;
-    var blocks = buildBlocks(config.classes, dayStartMin, blockMinutes);
+    var tmpl = buildWeekTemplate(config);
+    if (tmpl.error) return { error: tmpl.error };
 
-    var attDates = qualifyingDates(config.year, config.month, [1, 3], config.startDay, config.endDay); // Mon, Wed
-    var studyDates = qualifyingDates(config.year, config.month, [2, 4], config.startDay, config.endDay); // Tue, Thu
+    var attDates = qualifyingDates(config.year, config.month,
+      activeWeekdays(tmpl.attendance), config.startDay, config.endDay);
+    var studyDates = qualifyingDates(config.year, config.month,
+      activeWeekdays(tmpl.study), config.startDay, config.endDay);
 
-    var attendanceRows = buildRows(attDates, blocks);
-    var studyRows = buildRows(studyDates, blocks);
+    var attendanceRows = buildRowsFromTemplate(attDates, tmpl.attendance);
+    var studyRows = buildRowsFromTemplate(studyDates, tmpl.study);
 
     return {
-      blocks: blocks,
+      error: null,
+      template: tmpl,
       attendanceRows: attendanceRows,
       studyRows: studyRows,
       weekly: weeklyHours(attendanceRows, studyRows),
+      classWeekMin: tmpl.classWeekMin,
+      studyWeekMin: tmpl.studyWeekMin,
       monthYearLabel: MONTHS[config.month] + " " + config.year,
       monAbbr: MON_ABBR[config.month]
     };
@@ -208,6 +471,7 @@
   return {
     MONTHS: MONTHS,
     MON_ABBR: MON_ABBR,
+    DAY_NAMES: DAY_NAMES,
     pad2: pad2,
     formatTime: formatTime,
     parseTime: parseTime,
@@ -215,9 +479,14 @@
     formatDate: formatDate,
     dayAbbr: dayAbbr,
     formatDateWithDay: formatDateWithDay,
+    isScheduled: isScheduled,
     buildBlocks: buildBlocks,
+    validateMeetings: validateMeetings,
+    studyChunks: studyChunks,
+    buildWeekTemplate: buildWeekTemplate,
     qualifyingDates: qualifyingDates,
     buildRows: buildRows,
+    buildRowsFromTemplate: buildRowsFromTemplate,
     weeklyHours: weeklyHours,
     compute: compute
   };
