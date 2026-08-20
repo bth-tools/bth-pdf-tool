@@ -3,8 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Static host (GitHub Pages) sets no headers, so ask browsers to revalidate the
+       page itself; the ?v= query on the scripts below guarantees that a fresh page
+       can never pair with a stale app.js/schedule.js. Bump ?v= on every release. -->
+  <meta http-equiv="Cache-Control" content="no-cache, must-revalidate" />
   <title>Bridge to Hope — DHS Hours Auto-Filler</title>
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=2" />
 </head>
 <body>
   <main class="wrap">
@@ -60,8 +64,10 @@
 
     <section class="card">
       <h2>Classes</h2>
-      <p class="hint">Listed top-to-bottom in the order they appear on the forms. Blocks auto-sequence
-        as back-to-back 90-minute periods from the day start time. Override a block’s start/end only if you need to.</p>
+      <p class="hint">List your classes in the order you want them on the forms. The tool picks the
+        times for you. Does a class meet at a set day and time (like a Zoom class or an in-person
+        class)? Turn on “Does this class meet at set times?” and enter its days and times. Online
+        classes with no set meeting time: skip that — the tool handles them.</p>
       <div class="day-start">
         <label>Day start time
           <input id="dayStart" type="text" value="8:00" inputmode="numeric" placeholder="8:00" />
@@ -141,8 +147,8 @@
   </div>
 
   <script src="lib/pdf-lib.min.js"></script>
-  <script src="schedule.js"></script>
-  <script src="pdffill.js"></script>
-  <script src="app.js"></script>
+  <script src="schedule.js?v=2"></script>
+  <script src="pdffill.js?v=2"></script>
+  <script src="app.js?v=2"></script>
 </body>
 </html>

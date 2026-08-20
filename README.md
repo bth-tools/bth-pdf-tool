@@ -70,12 +70,15 @@ styles.css                 styling
 app.js                     UI wiring
 schedule.js                date/schedule/formatting logic
 pdffill.js                 fills the AcroForm fields with pdf-lib
+lib/pdf-lib.min.js         the pdf-lib library (bundled locally, not a CDN)
 ClassAttend_DHS 816.pdf    blank attendance form     (you provide — see below)
 StudyTimesheet_DHS 819.pdf blank study timesheet     (you provide — see below)
 MonitoredStudy_DHS 817.pdf blank monitored-study form (you provide — see below)
 ```
 
-`pdf-lib` is loaded from a CDN at runtime — there is nothing to install or build.
+`pdf-lib` is bundled locally at `lib/pdf-lib.min.js` — there is nothing to install or
+build, but that file **must** be deployed along with everything else or the Generate
+button will fail.
 
 ---
 
@@ -122,6 +125,14 @@ Then open <http://localhost:8000/> in your browser.
 6. Wait ~1 minute. GitHub shows the live URL at the top of the Pages settings, like:
    `https://<your-username>.github.io/bth-pdf-tool/`
 7. Share that link with BTH. Done — it's live and updates whenever you push changes.
+
+> **When you change `app.js`, `schedule.js`, or `styles.css`, bump the `?v=` number**
+> on the matching `<script>` / `<link>` tags in `index.html` (e.g. `app.js?v=2` →
+> `app.js?v=3`) and push both files together. Browsers cache those files, and without
+> the bump a returning user can end up running a *stale* `app.js` against the new
+> `index.html` — the page looks updated but its buttons and fields do nothing. The
+> version query forces a fresh copy. If a page ever does load in that broken state, it
+> now shows a "This page didn't load correctly" message instead of failing silently.
 
 > Tip: the folder may include dev-only files (`_dev_test.js`, `package.json`,
 > `node_modules/`). They're harmless on Pages, but you can skip uploading them to keep the

@@ -429,6 +429,33 @@
     getBlank("817", PDF_817).catch(function () {});
   }
 
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
-  else init();
+  /*
+   * If a script failed to load (stale cache, interrupted sync, bad deploy) the page
+   * would otherwise sit there looking normal but completely inert. Surface it instead.
+   */
+  function fatal(msg) {
+    var box = document.createElement("p");
+    box.className = "class-error";
+    box.setAttribute("role", "alert");
+    box.textContent = "This page didn’t load correctly — " + msg +
+      " Please refresh the page (Ctrl+Shift+R, or Cmd+Shift+R on a Mac).";
+    var host = $("classList") || document.body;
+    host.parentNode.insertBefore(box, host);
+  }
+
+  function boot() {
+    if (!Sched || !Fill) {
+      fatal("some of its files are missing or out of date.");
+      return;
+    }
+    try {
+      init();
+    } catch (e) {
+      console.error(e);
+      fatal("it hit an error while starting up (" + e.message + ").");
+    }
+  }
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
+  else boot();
 })();
