@@ -119,6 +119,10 @@ input:focus, select:focus { outline: 2px solid var(--brand); outline-offset: 0; 
 .meeting-row .del:hover { background: var(--warn-bg); }
 .ghost.small { padding: 6px 10px; font-size: 0.85rem; margin: 0 0 8px; }
 
+/* Nudge shown when "meets at set times" is on but no meeting is entered yet */
+.meet-hint { margin: 0 0 8px; color: var(--muted); font-size: 0.82rem; }
+.meet-hint[hidden] { display: none; }
+
 .class-error {
   color: var(--warn);
   background: var(--warn-bg);

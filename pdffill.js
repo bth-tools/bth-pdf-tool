@@ -1,7 +1,18 @@
 /*
- * pdffill.js — fills the DHS 816 / 819 AcroForms using pdf-lib.
- * PDFLib is passed in (window.PDFLib in browser, require('pdf-lib') in node).
- * Exposed as window.BTHFill (browser) and module.exports (node).
+ * pdffill.js — THE PDF FILLER.
+ *
+ * Takes the finished rows from schedule.js and types them into the real blank
+ * DHS forms. It works on the official PDFs as delivered: it only fills in the
+ * existing form boxes, so the result stays fillable and signable in Adobe.
+ * It never draws anything, never adds pages, and never embeds a font — the
+ * forms already carry the standard fonts they need.
+ *
+ * Signature, instructor and "Department Use" boxes are deliberately left empty
+ * for a person to complete.
+ *
+ * The pdf-lib library is handed in by the caller (window.PDFLib in the
+ * browser, require('pdf-lib') under Node).
+ * Loaded as window.BTHFill in the browser, module.exports under Node.
  */
 (function (root, factory) {
   if (typeof module === "object" && module.exports) module.exports = factory();
@@ -9,9 +20,13 @@
 })(typeof self !== "undefined" ? self : this, function () {
   "use strict";
 
-  // Ordered row-field suffixes, matching how the PDFs are actually named.
-  // Page 1 rows are "n"; page 2 reuses "n_2" for the first block then "n" again
-  // for the trailing continuation rows.
+  /* ================== WHERE EACH BOX LIVES IN EACH FORM =====================
+   * The boxes inside the official PDFs have fixed internal names. Row boxes are
+   * numbered, but the numbering restarts oddly on page 2: it repeats the page-1
+   * numbers with "_2" on the end, then carries on counting. This builds the row
+   * names in the order a reader goes down the page, so filling them in order
+   * flows correctly from page 1 onto page 2.
+   */
   function suffixes(page1Count, page2DupCount, page2ContStart, page2ContEnd) {
     var out = [];
     var i;
@@ -21,12 +36,20 @@
     return out;
   }
 
+  /*
+   * One entry per form: the name of each header box, the name of each column,
+   * and how many rows that form holds. The odd spacing inside some names (two
+   * spaces) is intentional — it matches the real PDFs exactly.
+   *
+   * The HANA ID# box is intentionally not filled by this tool; BTH staff write
+   * it in by hand. Its box is named "HANA ID" in all three forms if that ever
+   * needs to change.
+   */
   var FORMS = {
     "816": {
       header: {
         name: "EDUCATIONAL ACTIVITY ATTENDANCE FORM",
         institution: "Educational Institution 1",
-        hanaId: "HANA ID",
         monthYear: "MonthYear"
       },
       cols: {
@@ -42,7 +65,6 @@
       header: {
         name: "Student Name",
         institution: "Educational Institution",
-        hanaId: "HANA ID",
         monthYear: "Month  Year" // two spaces — matches the PDF
       },
       cols: {
@@ -63,7 +85,6 @@
       header: {
         name: "Student Name",
         institution: "Educational Institution",
-        hanaId: "HANA ID",
         monthYear: "MonthYear"
       },
       cols: {
@@ -77,6 +98,11 @@
     }
   };
 
+  /*
+   * Type one value into one named box. Boxes that do not exist in a given form,
+   * and values that are empty, are skipped rather than treated as errors — that
+   * is how blanks like the signature lines are left for a person to complete.
+   */
   function trySet(form, name, value, fontSize) {
     var field;
     try {
@@ -93,7 +119,7 @@
 
   /*
    * fill(PDFLib, pdfBytes, formKey, header, rows) -> Promise<Uint8Array>
-   * header = { name, institution, hanaId, monthYear }
+   * header = { name, institution, monthYear }
    * rows   = [{ date, code, start, end, total }]
    * Returns { bytes, used, capacity, overflow }.
    */
@@ -104,13 +130,18 @@
     var pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
     var form = pdfDoc.getForm();
 
-    // Header
+    /* ======================== FILLING IN THE FORM ==========================
+     * Student details across the top, then one row per class block down the
+     * page. Rows past the form's capacity are counted as "overflow" and
+     * reported back so the app can warn instead of silently dropping them.
+     */
+
+    // Student details at the top of the page.
     trySet(form, spec.header.name, header.name, 11);
     trySet(form, spec.header.institution, header.institution, 11);
-    if (header.hanaId) trySet(form, spec.header.hanaId, header.hanaId, 11);
     trySet(form, spec.header.monthYear, header.monthYear, 11);
 
-    // Rows
+    // One row per class block, in order down the page and onto page 2.
     var capacity = spec.suffixes.length;
     var used = Math.min(rows.length, capacity);
     for (var i = 0; i < used; i++) {
@@ -123,7 +154,9 @@
       trySet(form, spec.cols.total + sfx, r.total, 9);
     }
 
-    // Keep the form editable so the student can sign in Adobe afterward.
+    // Saved with the form still editable, so the student can correct a cell and
+    // sign in Adobe afterwards. No font is embedded and no page is added: the
+    // only thing added to the file is the text typed into the existing boxes.
     var bytes = await pdfDoc.save();
     return {
       bytes: bytes,

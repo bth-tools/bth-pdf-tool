@@ -1,7 +1,13 @@
 /*
- * schedule.js — pure scheduling + formatting logic for the Bridge to Hope PDF filler.
- * No DOM, no pdf-lib. Shared by the browser app and the Node test harness.
- * Exposed as window.BTHSchedule (browser) and module.exports (node).
+ * schedule.js — THE SCHEDULING ENGINE.
+ *
+ * This file decides WHEN every class and study block happens. It is the single
+ * place that works this out: the on-screen times, the live hours panel, and the
+ * generated PDFs all call into here, so they can never disagree with each other.
+ *
+ * It only does arithmetic on dates and times. It never touches the page and
+ * never touches a PDF, which makes it safe to read and test on its own.
+ * Loaded as window.BTHSchedule in the browser, module.exports under Node.
  *
  * The tool is a weekly-timetable builder:
  *  - SCHEDULED classes (meetings: [{day, startMin, endMin}]) claim their exact
@@ -33,12 +39,23 @@
     "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
   ];
 
-  // Default attendance days for async classes, default study days, and the
-  // order extra study days are used when Tue/Thu can't hold everything.
+  /* ============================ THE GROUND RULES ============================
+   * The program's defaults. Change a number here and the whole tool follows.
+   * Online classes are logged Mon & Wed; study time is logged Tue & Thu; if a
+   * week's study will not fit on Tue/Thu it spills onto the extra days in the
+   * order listed. Days are JavaScript weekday numbers (Sunday = 0).
+   */
   var ATTEND_DAYS = [1, 3];            // Mon, Wed
   var STUDY_DAYS = [2, 4];             // Tue, Thu
   var STUDY_OVERFLOW = [5, 6, 0, 1, 3]; // Fri, Sat, Sun, Mon, Wed
   var DAY_END_MIN = 24 * 60;           // no block may run past midnight
+
+  /* ===================== WRITING TIMES AND DATES THE WAY =====================
+   * ===================== THE PAPER FORMS EXPECT THEM =========================
+   * The DHS forms use a plain 12-hour clock with no AM/PM ("1:30"), dates with
+   * no leading zeros ("9/8"), and hours as decimals ("1.5"). These small
+   * helpers are the only place that formatting is decided.
+   */
 
   function pad2(n) { return n < 10 ? "0" + n : "" + n; }
 
@@ -93,24 +110,6 @@
     return !!(c.meetings && c.meetings.length);
   }
 
-  /*
-   * Build the ordered class blocks for a single day (original async behavior,
-   * kept intact for the no-scheduled-classes path and the test harness).
-   * classes: [{ code, startMin?, endMin? }]
-   */
-  function buildBlocks(classes, dayStartMin, blockMinutes) {
-    var blocks = [];
-    var cursor = dayStartMin;
-    for (var i = 0; i < classes.length; i++) {
-      var c = classes[i];
-      var start = (c.startMin != null) ? c.startMin : cursor;
-      var end = (c.endMin != null) ? c.endMin : start + blockMinutes;
-      blocks.push({ code: c.code, startMin: start, endMin: end });
-      cursor = end; // next class chains off this one's end
-    }
-    return blocks;
-  }
-
   // First start >= from where [start, start+dur) touches none of the claimed
   // intervals. Intervals need not be sorted.
   function nextFreeStart(from, dur, claimed) {
@@ -129,8 +128,12 @@
     return s;
   }
 
-  // Validate scheduled meetings: each must run forward, and no two claimed
-  // intervals may overlap on the same day. Returns null or { message }.
+  /* ======================= CHECKING WHAT WAS TYPED IN =======================
+   * Catches the two mistakes a person can make when entering set meeting
+   * times: an end time that is not after its start, and two classes booked on
+   * top of each other on the same day. Returns nothing when all is well, or a
+   * plain-English message the page shows under the class list.
+   */
   function validateMeetings(classes) {
     var perDay = {}; // day -> [{code, startMin, endMin}]
     for (var i = 0; i < classes.length; i++) {
@@ -164,8 +167,11 @@
     return null;
   }
 
-  // Split a class's weekly study minutes into blocks: default-size blocks with
-  // the final one shorter or longer so the exact total is always hit.
+  /* ========================= SPLITTING UP STUDY TIME =========================
+   * A class earns the same number of study hours per week as it has class
+   * hours. Those hours are broken into sittings of the standard length, with
+   * the last one made shorter or longer so the weekly total comes out exact.
+   */
   function studyChunks(totalMin, blockMinutes) {
     var chunks = [];
     var rem = totalMin;
@@ -364,9 +370,15 @@
     };
   }
 
+  /* ==================== TURNING ONE WEEK INTO ONE MONTH =====================
+   * Everything above plans a single typical week. The rest of the file repeats
+   * that week across the chosen month to produce the actual dated rows the
+   * forms are filled with.
+   */
+
   /*
-   * Find qualifying day-of-month numbers for a month, matching weekdays, within clip.
-   * weekdays: array of JS getDay() values (Sun=0..Sat=6).
+   * Every date in the month that falls on one of the given weekdays. The
+   * optional start/end day is the "part of a month" clip on the Month card.
    */
   function qualifyingDates(year, month, weekdays, startDay, endDay) {
     var daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -409,12 +421,6 @@
     return rows;
   }
 
-  // Original single-blocklist row builder (kept for compatibility/tests).
-  function buildRows(dates, blocks) {
-    var byDay = [blocks, blocks, blocks, blocks, blocks, blocks, blocks];
-    return buildRowsFromTemplate(dates, byDay);
-  }
-
   // ISO-ish week key (Monday-start) for grouping weekly hours.
   function weekKey(d) {
     var tmp = new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -431,8 +437,8 @@
   }
 
   /*
-   * Combined weekly hours (class + study). Returns sorted array of
-   * { label, monday, hours }.
+   * Class + study hours added up per calendar week, used for reporting.
+   * Each entry is one Monday-to-Sunday week: { label, monday, hours }.
    */
   function weeklyHours(attendanceRows, studyRows) {
     var map = {};
@@ -468,6 +474,13 @@
     return out;
   }
 
+  /* ========================= THE ONE ENTRY POINT ============================
+   * Hand this the filled-in form and it returns everything needed to build the
+   * PDFs: the dated attendance rows, the dated study rows, the weekly hour
+   * totals and the month label. If the entered meeting times clash it returns
+   * an error message instead, and no PDF is produced.
+   */
+
   /*
    * Top-level: from a config object produce everything the app needs.
    * config = {
@@ -502,26 +515,22 @@
     };
   }
 
+  /*
+   * What the rest of the app is allowed to use. Everything above that is not
+   * listed here is a helper used only inside this file.
+   *   compute            — the whole month, ready for the PDFs
+   *   buildWeekTemplate  — one week's timetable (what the screen shows)
+   *   parseTime          — read a typed time, e.g. "9:30", into minutes
+   *   formatTime         — turn minutes back into "9:30"
+   *   formatTotal        — turn minutes into decimal hours, e.g. "1.5"
+   *   MONTHS             — month names for the month dropdown
+   */
   return {
     MONTHS: MONTHS,
-    MON_ABBR: MON_ABBR,
-    DAY_NAMES: DAY_NAMES,
-    pad2: pad2,
-    formatTime: formatTime,
     parseTime: parseTime,
+    formatTime: formatTime,
     formatTotal: formatTotal,
-    formatDate: formatDate,
-    dayAbbr: dayAbbr,
-    formatDateWithDay: formatDateWithDay,
-    isScheduled: isScheduled,
-    buildBlocks: buildBlocks,
-    validateMeetings: validateMeetings,
-    studyChunks: studyChunks,
     buildWeekTemplate: buildWeekTemplate,
-    qualifyingDates: qualifyingDates,
-    buildRows: buildRows,
-    buildRowsFromTemplate: buildRowsFromTemplate,
-    weeklyHours: weeklyHours,
     compute: compute
   };
 });

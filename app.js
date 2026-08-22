@@ -1,14 +1,43 @@
-/* app.js — DOM wiring for the Bridge to Hope DHS auto-filler. */
+/*
+ * app.js — THE PAGE ITSELF.
+ *
+ * Connects what a person types on the page to the two other files:
+ *   schedule.js — works out the timetable (the only place that decides times)
+ *   pdffill.js  — types the result into the real blank DHS forms
+ *
+ * Nothing is uploaded and nothing is saved. Everything happens in the browser
+ * and disappears when the page is closed or refreshed.
+ *
+ * The page is laid out top to bottom as: which forms to make, the student,
+ * the month, the class list, a live hours summary, and the Generate button.
+ */
 (function () {
   "use strict";
 
   var Sched = window.BTHSchedule;
   var Fill = window.BTHFill;
 
-  // Blank form filenames (kept exactly as delivered; spaces are URL-encoded on fetch).
-  var PDF_816 = "ClassAttend_DHS 816.pdf";
-  var PDF_819 = "StudyTimesheet_DHS 819.pdf";
-  var PDF_817 = "MonitoredStudy_DHS 817.pdf";
+  /*
+   * The three forms this tool can produce. One entry each, so adding or
+   * changing a form is a single edit here rather than three matching edits
+   * further down.
+   *   checkbox — the tick box on the page
+   *   blank    — the official empty PDF, filename exactly as delivered
+   *   rows     — which set of rows it gets: attendance days, or study days
+   *   prefix   — the start of the downloaded filename
+   * The DHS 817 deliberately gets the same study rows as the DHS 819; only its
+   * monitor certification block differs, and that is left blank to be signed.
+   */
+  var FORMS = [
+    { key: "816", checkbox: "form816", blank: "ClassAttend_DHS 816.pdf",
+      rows: "attendanceRows", prefix: "DHS816_Attendance_" },
+    { key: "819", checkbox: "form819", blank: "StudyTimesheet_DHS 819.pdf",
+      rows: "studyRows", prefix: "DHS819_StudyTime_" },
+    { key: "817", checkbox: "form817", blank: "MonitoredStudy_DHS 817.pdf",
+      rows: "studyRows", prefix: "DHS817_MonitoredStudy_" }
+  ];
+
+  // How long one online class block runs, in minutes (1.5 hours).
   var BLOCK_MINUTES = 90;
 
   var $ = function (id) { return document.getElementById(id); };
@@ -28,10 +57,13 @@
     howToClose: $("howToClose")
   };
 
-  // Cache of fetched blank PDFs.
-  var blankBytes = { "816": null, "819": null, "817": null };
+  // Each blank PDF is downloaded once and kept, so repeat generates are quick.
+  var blankBytes = {};
 
-  /* ---------- setup form controls ---------- */
+  /* ======================== BUILDING THE DROPDOWNS ==========================
+   * Fills the month and year boxes (defaulting to the current month) and the
+   * optional start/end day lists used for a partial month.
+   */
 
   function fillMonthYear() {
     var now = new Date();
@@ -57,6 +89,14 @@
       }
     });
   }
+
+  /* ========================== THE CLASS LIST ================================
+   * Each class is one block on the page: its code, its automatic start/end
+   * times, and the "meets at set times" tick box. Ticking that box opens a
+   * small day/start/end editor underneath, which can hold several days.
+   * Every control here calls refreshPlaceholders() so the displayed times and
+   * the hours summary update as soon as anything changes.
+   */
 
   var DAY_OPTIONS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -98,6 +138,7 @@
         '<div class="meeting-head"><span>Day</span><span>Starts</span><span>Ends</span><span></span></div>' +
         '<div class="meeting-list"></div>' +
         '<button class="add-meeting ghost small" type="button">+ Add another day</button>' +
+        '<p class="meet-hint" hidden>Add this class’s meeting day and time.</p>' +
       "</div>";
     item.querySelector(".c-code").value = code || "";
     item.querySelector(".class-row .del").addEventListener("click", function () {
@@ -122,7 +163,20 @@
     return item;
   }
 
-  /* ---------- read inputs ---------- */
+  /* ===================== READING THE PAGE INTO ONE OBJECT ===================
+   * Gathers everything typed on the page into the single plain object that
+   * schedule.js expects. A class with the tick box on becomes a list of
+   * meetings; a class without it is left for the tool to time automatically.
+   */
+
+  // True once a row has at least one meeting with a day, a start and an end.
+  function hasCompleteMeeting(item) {
+    return Array.prototype.slice.call(item.querySelectorAll(".meeting-row")).some(function (mr) {
+      return mr.querySelector(".m-day").value !== "" &&
+             Sched.parseTime(mr.querySelector(".m-start").value) != null &&
+             Sched.parseTime(mr.querySelector(".m-end").value) != null;
+    });
+  }
 
   function readClasses() {
     var items = Array.prototype.slice.call(el.classList.querySelectorAll(".class-item"));
@@ -165,9 +219,6 @@
     return {
       name: el.name.value.trim(),
       institution: el.institution.value.trim(),
-      // HANA ID input was removed from the UI; the PDF field is left blank so
-      // BTH staff can complete it by hand. pdffill.js only sets it when present.
-      hanaId: "",
       classes: readClasses(),
       dayStartMin: dayStartMin,
       blockMinutes: BLOCK_MINUTES,
@@ -178,7 +229,12 @@
     };
   }
 
-  /* ---------- live auto-time placeholders + inline schedule error ---------- */
+  /* ========================= KEEPING THE PAGE FRESH =========================
+   * Runs after every change anywhere in the class list. It asks schedule.js
+   * for the current timetable and writes the resulting times back into each
+   * class row, so the screen always agrees with what the PDFs will say. If two
+   * set-time classes clash it shows the message under the list instead.
+   */
 
   function showClassError(message) {
     el.classError.textContent = message || "";
@@ -195,6 +251,14 @@
     }
     showClassError(null);
     var items = Array.prototype.slice.call(el.classList.querySelectorAll(".class-item"));
+
+    // A row set to "meets at set times" but with nothing entered yet gets a
+    // one-line nudge, so the space that opens up under it is explained.
+    items.forEach(function (item) {
+      var hint = item.querySelector(".meet-hint");
+      if (hint) hint.hidden = !(item.querySelector(".c-meets").checked && !hasCompleteMeeting(item));
+    });
+
     var ci = 0; // index into cfg.classes (rows with a code)
     items.forEach(function (item) {
       var code = item.querySelector(".c-code").value.trim();
@@ -207,11 +271,12 @@
     renderHoursPanel(cfg, tmpl);
   }
 
-  /* ---------- live hours panel ---------- */
-
-  // Weekly totals come straight from the real timetable template: class hours
-  // are every attendance block in the week (async Mon/Wed blocks + scheduled
-  // meetings), study hours are the 1:1 study blocks laid out around them.
+  /* ========================== THE HOURS SUMMARY =============================
+   * The panel under the class list. Its numbers come from the same timetable
+   * the PDFs are built from, so it can never quietly disagree with them.
+   * With no forms ticked it greys out and previews what all of them would
+   * document. It is informational only — required hours vary by situation.
+   */
   function renderHoursPanel(cfg, tmpl) {
     if (!cfg) cfg = buildConfig();
     if (tmpl === undefined) tmpl = Sched.buildWeekTemplate(cfg);
@@ -238,15 +303,18 @@
     el.hoursPanel.classList.toggle("preview", !anyForm);
   }
 
-  /* ---------- PDF fetch + download ---------- */
+  /* ====================== FETCHING AND SAVING THE PDFS ======================
+   * The blank forms sit next to this page and are fetched once each. Finished
+   * files are handed to the browser as ordinary downloads.
+   */
 
-  async function getBlank(key, filename) {
-    if (blankBytes[key]) return blankBytes[key];
-    var resp = await fetch(encodeURI(filename));
-    if (!resp.ok) throw new Error("Could not load " + filename + " (" + resp.status + ")");
+  async function getBlank(form) {
+    if (blankBytes[form.key]) return blankBytes[form.key];
+    var resp = await fetch(encodeURI(form.blank));
+    if (!resp.ok) throw new Error("Could not load " + form.blank + " (" + resp.status + ")");
     var buf = await resp.arrayBuffer();
-    blankBytes[key] = new Uint8Array(buf);
-    return blankBytes[key];
+    blankBytes[form.key] = new Uint8Array(buf);
+    return blankBytes[form.key];
   }
 
   function download(bytes, filename) {
@@ -271,13 +339,16 @@
     el.status.className = "status" + (kind ? " " + kind : "");
   }
 
-  /* ---------- generate ---------- */
+  /* ============================ MAKING THE PDFS =============================
+   * Checks the entries first and refuses with a plain message if something is
+   * missing or two set-time classes clash. Then it works out the timetable
+   * once and fills every ticked form from it. Downloads are spaced slightly
+   * apart because browsers drop files that arrive all at once.
+   */
 
   async function generate() {
-    var want816 = el.form816.checked;
-    var want819 = el.form819.checked;
-    var want817 = el.form817.checked;
-    if (!want816 && !want819 && !want817) {
+    var wanted = FORMS.filter(function (f) { return $(f.checkbox).checked; });
+    if (!wanted.length) {
       setStatus("Select at least one form to generate.", "err"); return;
     }
 
@@ -312,32 +383,23 @@
       var header = {
         name: cfg.name,
         institution: cfg.institution,
-        hanaId: cfg.hanaId,
         monthYear: res.monthYearLabel
       };
 
+      // Fill each ticked form from the same computed rows. Filenames are
+      // <form>_<last name>_<Mon><year>.pdf, e.g. DHS816_Attendance_Lee_Aug2026.pdf
       var ln = lastName(cfg.name);
       var tag = res.monAbbr + cfg.year;
       var jobs = []; // { bytes, filename, overflow }
-
-      // DHS 816 — class attendance (Mon/Wed).
-      if (want816) {
-        var b816 = await getBlank("816", PDF_816);
-        var out816 = await Fill.fill(window.PDFLib, b816, "816", header, res.attendanceRows);
-        jobs.push({ bytes: out816.bytes, filename: "DHS816_Attendance_" + ln + "_" + tag + ".pdf", overflow: out816.overflow });
-      }
-      // DHS 819 — unsupervised study (Tue/Thu).
-      if (want819) {
-        var b819 = await getBlank("819", PDF_819);
-        var out819 = await Fill.fill(window.PDFLib, b819, "819", header, res.studyRows);
-        jobs.push({ bytes: out819.bytes, filename: "DHS819_StudyTime_" + ln + "_" + tag + ".pdf", overflow: out819.overflow });
-      }
-      // DHS 817 — monitored study. Same Tue/Thu content as the 819; Section 1
-      // (monitor name/signature/etc.) is left blank and fillable by pdffill.js.
-      if (want817) {
-        var b817 = await getBlank("817", PDF_817);
-        var out817 = await Fill.fill(window.PDFLib, b817, "817", header, res.studyRows);
-        jobs.push({ bytes: out817.bytes, filename: "DHS817_MonitoredStudy_" + ln + "_" + tag + ".pdf", overflow: out817.overflow });
+      for (var fi = 0; fi < wanted.length; fi++) {
+        var form = wanted[fi];
+        var blank = await getBlank(form);
+        var out = await Fill.fill(window.PDFLib, blank, form.key, header, res[form.rows]);
+        jobs.push({
+          bytes: out.bytes,
+          filename: form.prefix + ln + "_" + tag + ".pdf",
+          overflow: out.overflow
+        });
       }
 
       // Stagger the downloads so browsers don't drop the later files.
@@ -362,7 +424,11 @@
     }
   }
 
-  /* ---------- how-to modal ---------- */
+  /* ========================= THE "HOW TO USE" WINDOW ========================
+   * The pop-up behind the "How to use" button. Closes on Escape or on a click
+   * outside it, and keeps keyboard focus inside while it is open so it can be
+   * used without a mouse.
+   */
 
   function setupHowTo() {
     var overlay = el.howToOverlay;
@@ -407,7 +473,10 @@
     });
   }
 
-  /* ---------- init ---------- */
+  /* ============================== STARTUP ===================================
+   * Runs once when the page loads: builds the dropdowns, adds the first empty
+   * class row, wires up the buttons, and pre-fetches the blank PDFs.
+   */
 
   function init() {
     fillMonthYear();
@@ -423,10 +492,9 @@
     el.generate.addEventListener("click", generate);
     setupHowTo();
 
-    // Warm the blank PDFs so the first Generate is instant (and surfaces missing files early).
-    getBlank("816", PDF_816).catch(function () {});
-    getBlank("819", PDF_819).catch(function () {});
-    getBlank("817", PDF_817).catch(function () {});
+    // Fetch the blank PDFs now so the first Generate is instant, and so a
+    // missing file shows up straight away rather than at download time.
+    FORMS.forEach(function (f) { getBlank(f).catch(function () {}); });
   }
 
   /*
