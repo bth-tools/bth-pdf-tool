@@ -183,7 +183,7 @@
    *   error: null | { message },
    *   attendance: [ [ {code,startMin,endMin,scheduled} ] x7 ],   // by getDay()
    *   study:      [ [ {code,startMin,endMin} ] x7 ],
-   *   asyncPlaceholders: [ {startMin,endMin} | null per class ], // Monday times
+   *   asyncPlaceholders: [ {startMin,endMin} | null per class ], // display only
    *   classWeekMin, studyWeekMin
    * }
    */
@@ -312,12 +312,46 @@
       }
     }
 
-    // Monday auto times for the UI's live placeholders (null for scheduled rows).
+    /*
+     * Times the UI shows on each async row (null for scheduled rows).
+     *
+     * The forms schedule every attendance day independently, so one async class
+     * can sit at different times on Mon than on Wed. A row has a single
+     * Start/End pair, so the display re-runs the same sequencing against the
+     * union of every meeting claimed on the async attendance days. That keeps
+     * the shown time clear of every scheduled class it shares a day with, which
+     * is the one hard rule; when the days already agree it is exactly the
+     * earliest day's times, and with no scheduled class at all it reduces to
+     * the original Mon/Wed sequence unchanged.
+     *
+     * Display-only: nothing here feeds the rows the PDFs are built from.
+     */
+    var displayClaims = [];
+    for (d = 0; d < ATTEND_DAYS.length; d++) {
+      var cday = attendance[ATTEND_DAYS[d]];
+      for (i = 0; i < cday.length; i++) {
+        if (cday[i].scheduled) displayClaims.push(cday[i]);
+      }
+    }
+    var displayBlocks = [];
+    var dispCursor = dayStartMin;
+    for (i = 0; i < asyncClasses.length; i++) {
+      var da = asyncClasses[i];
+      var dStart, dEnd;
+      if (da.startMin != null) {
+        dStart = da.startMin; // explicit override wins, exactly as on the forms
+        dEnd = (da.endMin != null) ? da.endMin : dStart + blockMinutes;
+      } else {
+        dStart = nextFreeStart(dispCursor, blockMinutes, displayClaims);
+        dEnd = (da.endMin != null) ? da.endMin : dStart + blockMinutes;
+      }
+      displayBlocks.push({ startMin: dStart, endMin: dEnd });
+      dispCursor = dEnd;
+    }
     var asyncPlaceholders = classes.map(function (cl) {
       if (isScheduled(cl)) return null;
-      var ai2 = asyncClasses.indexOf(cl);
-      var mb = asyncByDay[1][ai2];
-      return mb ? { startMin: mb.startMin, endMin: mb.endMin } : null;
+      var db = displayBlocks[asyncClasses.indexOf(cl)];
+      return db ? { startMin: db.startMin, endMin: db.endMin } : null;
     });
 
     return {
