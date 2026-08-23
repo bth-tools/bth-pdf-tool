@@ -31,11 +31,21 @@ blocks, study blocks fill in around them, and the PDFs report the timetable.
 - Async blocks automatically **skip over** any time already claimed by a scheduled class
   on the same day; no two blocks ever overlap. Two scheduled classes that collide produce
   a plain-language inline error instead of a broken PDF.
-- **Study time is 1:1 with class time**: every class earns weekly study hours equal to
-  its weekly class hours (async classes = 3 hrs/week; scheduled = the sum of its meeting
-  durations). Study is laid out in 1.5-hour blocks (the final block shorter or longer to
-  hit the exact total) on Tue & Thu from the day start time, skipping claimed intervals,
-  overflowing to Fri, Sat, Sun, Mon, Wed if needed.
+- **Every class is accountable for at least 3 hrs/week of attendance.** An online class
+  earns that from its two auto-sequenced blocks. A class that meets at set times for
+  *less* than 3 hrs/week keeps its real meetings exactly as entered and the tool quietly
+  adds the missing time: an extra attendance block mirrored onto the meeting day's
+  partner (Mon↔Wed, Tue↔Thu; Fri/Sat/Sun mirror to Mon) at the same clock time, lasting
+  whatever is still owed. A real Mon 10:00–11:30 gains a Wed 10:00–11:30; a real
+  Mon 10:00–11:00 gains a Wed 10:00–12:00. If that slot is taken it slides later that
+  day. These rows look exactly like any other attendance row and nothing about them
+  appears on the page. A class already meeting 3 hrs/week or more is left alone.
+- **Study time is 1:1 with those accountable hours**: every class earns weekly study
+  hours equal to its weekly accountable attendance (so a short scheduled class still
+  earns a full 3 hrs, and a 4-hour class earns 4). Study is laid out in 1.5-hour blocks
+  (the final block shorter or longer to hit the exact total) on Tue & Thu from the day
+  start time, skipping claimed intervals, overflowing to Fri, Sat, Sun, Mon, Wed if
+  needed.
 - DHS 816 lists **every** day of the week that carries attendance blocks that month;
   DHS 819/817 list every day carrying study blocks — with an optional start-day /
   end-day clip for partial months. Day letters cover the full week (M, Tu, W, Th, F,
@@ -92,9 +102,9 @@ The app fills the official blank forms in place, so the two blank PDFs must sit 
 - `MonitoredStudy_DHS 817.pdf`
 
 They are already included in this folder. If you ever replace them with newer official
-versions, keep the same filenames (or update the `PDF_816` / `PDF_819` / `PDF_817`
-constants at the top of `app.js`). The forms must keep their fillable AcroForm fields —
-all current versions do.
+versions, keep the same filenames (or update the `blank:` entries in the `FORMS` table at
+the top of `app.js`). The forms must keep their fillable AcroForm fields — all current
+versions do.
 
 ---
 

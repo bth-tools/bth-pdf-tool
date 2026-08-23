@@ -15,8 +15,12 @@
  *  - ASYNC classes (no meetings) auto-sequence back-to-back on the default
  *    attendance days (Mon & Wed) from the day start time, skipping any time
  *    interval already claimed by a scheduled class on that day.
- *  - STUDY earns 1:1 with weekly class hours per class, laid out in blocks
- *    (default 1.5 hr, final block adjusted to hit the exact total) on the
+ *  - Every class is accountable for the same weekly attendance (3 hours at the
+ *    usual settings). A scheduled class that meets for less than that keeps its
+ *    real meetings and is topped up with extra attendance mirrored onto the
+ *    partner day. A class meeting that much or more is left alone.
+ *  - STUDY earns 1:1 with those weekly accountable hours per class, laid out in
+ *    blocks (default 1.5 hr, final block adjusted to hit the exact total) on the
  *    default study days (Tue & Thu), overflowing to Fri, Sat, Sun, Mon, Wed.
  * When no class is scheduled, everything reduces exactly to the original
  * Mon/Wed + mirrored Tue/Thu behavior.
@@ -49,6 +53,14 @@
   var STUDY_DAYS = [2, 4];             // Tue, Thu
   var STUDY_OVERFLOW = [5, 6, 0, 1, 3]; // Fri, Sat, Sun, Mon, Wed
   var DAY_END_MIN = 24 * 60;           // no block may run past midnight
+
+  /*
+   * Where a "phantom" block goes (see the credit-hour rule further down): it
+   * mirrors onto the meeting day's partner. Mon and Wed pair with each other,
+   * Tue and Thu pair with each other, and a class meeting at the end of the
+   * week mirrors onto Monday.
+   */
+  var PARTNER_DAY = { 1: 3, 3: 1, 2: 4, 4: 2, 5: 1, 6: 1, 0: 1 };
 
   /* ===================== WRITING TIMES AND DATES THE WAY =====================
    * ===================== THE PAPER FORMS EXPECT THEM =========================
@@ -187,7 +199,7 @@
    * Build the weekly timetable template from a config.
    * Returns {
    *   error: null | { message },
-   *   attendance: [ [ {code,startMin,endMin,scheduled} ] x7 ],   // by getDay()
+   *   attendance: [ [ {code,startMin,endMin,scheduled,phantom?} ] x7 ], // by getDay()
    *   study:      [ [ {code,startMin,endMin} ] x7 ],
    *   asyncPlaceholders: [ {startMin,endMin} | null per class ], // display only
    *   classWeekMin, studyWeekMin
@@ -215,6 +227,51 @@
         var m = c.meetings[j];
         attendance[m.day].push({ code: c.code, startMin: m.startMin, endMin: m.endMin, scheduled: true });
       }
+    }
+
+    /*
+     * 1b. Credit-hour top-up ("phantom" blocks).
+     *
+     * Every class is accountable for the same weekly attendance: one standard
+     * block on each of the attendance days, which with the usual settings is
+     * 3 hours. An online class earns that automatically. A class that meets at
+     * set times for LESS than that keeps its real meetings exactly as entered,
+     * and the tool quietly adds enough extra attendance to make up the
+     * difference, so the student is credited the full weekly amount.
+     *
+     * The extra block mirrors the first meeting onto its partner day at the
+     * same clock time, and lasts however long is still owed. For example a real
+     * Monday 10:00-11:30 earns a Wednesday 10:00-11:30 top-up, while a real
+     * Monday 10:00-11:00 earns a Wednesday 10:00-12:00 one. If that slot is
+     * already taken it slides later that day, like everything else.
+     *
+     * These blocks are ordinary attendance rows on the form and carry the same
+     * class code. Nothing about them appears on the page.
+     */
+    var minWeekMin = ATTEND_DAYS.length * blockMinutes; // 3 hrs at the usual settings
+    var phantomMins = [];                               // per class, aligned with classes
+    for (i = 0; i < classes.length; i++) {
+      phantomMins.push(0);
+      var pc = classes[i];
+      if (!isScheduled(pc)) continue;
+      var meetMin = 0;
+      for (j = 0; j < pc.meetings.length; j++) {
+        meetMin += pc.meetings[j].endMin - pc.meetings[j].startMin;
+      }
+      var owed = minWeekMin - meetMin;
+      if (owed <= 0) continue;              // meets enough already: nothing added
+      var firstMeeting = pc.meetings[0];    // multiple days mirror the first one
+      var pDay = PARTNER_DAY[firstMeeting.day];
+      var pStart = nextFreeStart(firstMeeting.startMin, owed, attendance[pDay]);
+      if (pStart + owed > DAY_END_MIN) {
+        return { error: { message: "There isn’t room on " + DAY_NAMES[pDay] +
+          " for the rest of “" + pc.code + "”’s weekly hours — check the times." } };
+      }
+      attendance[pDay].push({
+        code: pc.code, startMin: pStart, endMin: pStart + owed,
+        scheduled: true, phantom: true
+      });
+      phantomMins[i] = owed;
     }
 
     // 2. Async classes auto-sequence on Mon & Wed, skipping claimed intervals.
@@ -251,7 +308,11 @@
       attendance[d] = withIdx.map(function (x) { return x.b; });
     }
 
-    // Per-class weekly class minutes (drives the 1:1 study rule).
+    /*
+     * Weekly attendance each class is accountable for. This is what the hours
+     * panel shows and what study time matches one-for-one, so a class topped up
+     * to the weekly minimum earns the full study allowance as well.
+     */
     var classMins = [];
     var classWeekMin = 0;
     for (i = 0; i < classes.length; i++) {
@@ -260,6 +321,7 @@
         for (j = 0; j < classes[i].meetings.length; j++) {
           mins += classes[i].meetings[j].endMin - classes[i].meetings[j].startMin;
         }
+        mins += phantomMins[i]; // the top-up counts as attendance
       } else {
         var ai = asyncClasses.indexOf(classes[i]);
         for (d = 0; d < ATTEND_DAYS.length; d++) {
