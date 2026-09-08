@@ -21,51 +21,66 @@ and nothing is stored.
 The tool is a **weekly-timetable builder**: each class contributes weekly attendance
 blocks, study blocks fill in around them, and the PDFs report the timetable.
 
-- Each class row asks one question: **"Does this class meet at set times?"** (off by
-  default).
-  - **Off** — the class is treated as online/asynchronous: it auto-sequences as
-    back-to-back 90-minute blocks on Mon & Wed from the day start time, exactly as
-    before. You can still override an individual block's start/end.
+- Each class row carries a **Credits** number (1–4, default **3**). The common student
+  never touches it. Credits decide two things:
+  - how much class time an *online* class earns per week — 3 credits = 3.0 hrs, laid out
+    as 1.5 + 1.5 on Mon & Wed exactly as before; 1 credit = a single 1.0-hr block;
+    4 credits = 1.5 + 1.5 + 1;
+  - **how much study time the class earns — always its credits, whatever its attendance
+    turns out to be.** A 3-credit class that meets for only 1.5 literal hours still earns
+    3.0 study hrs/week.
+- Each class row also asks: **"Does this class meet at set times?"** (off by default).
+  - **Off** — the class is treated as online/asynchronous and auto-sequences from the day
+    start time on Mon & Wed. You can still override an individual block's start/end, in
+    which case those exact times are used on both days, as before.
   - **On** — the row expands into one or more meetings (Day + Starts + Ends, with
-    "+ Add another day"). Those meetings claim their exact days and times on the forms.
+    "+ Add another day"). Those meetings claim their exact days and times on the forms,
+    and **by default that is all the class documents.**
 - Async blocks automatically **skip over** any time already claimed by a scheduled class
   on the same day; no two blocks ever overlap. Two scheduled classes that collide produce
   a plain-language inline error instead of a broken PDF.
-- **Every class is accountable for at least 3 hrs/week of attendance.** An online class
-  earns that from its two auto-sequenced blocks. A class that meets at set times for
-  *less* than 3 hrs/week keeps its real meetings exactly as entered and the tool quietly
-  adds the missing time: an extra attendance block mirrored onto the meeting day's
-  partner (Mon↔Wed, Tue↔Thu; Fri/Sat/Sun mirror to Mon) at the same clock time, lasting
-  whatever is still owed. A real Mon 10:00–11:30 gains a Wed 10:00–11:30; a real
-  Mon 10:00–11:00 gains a Wed 10:00–12:00. If that slot is taken it slides later that
-  day. These rows look exactly like any other attendance row and nothing about them
-  appears on the page. A class already meeting 3 hrs/week or more is left alone.
-- **Study time is 1:1 with those accountable hours**: every class earns weekly study
-  hours equal to its weekly accountable attendance (so a short scheduled class still
-  earns a full 3 hrs, and a 4-hour class earns 4). Study is laid out in 1.5-hour blocks
-  (the final block shorter or longer to hit the exact total) on Tue & Thu from the day
-  start time, skipping claimed intervals, overflowing to Fri, Sat, Sun, Mon, Wed if
-  needed.
+- **Remainder blocks are opt-in.** When a scheduled class meets for fewer hours than it
+  carries in credits, its row shows a quiet note — *"This class meets 1.5 of its 4 credit
+  hours."* — and one switch: **"Add the remaining hours as flexible blocks", off by
+  default. Leave it off and the class documents its real meetings only.** Turn it on and
+  the difference is added as a flexible block mirrored onto the meeting day's partner
+  (Mon↔Wed, Tue↔Thu; Fri/Sat/Sun mirror to Mon) at the same clock time, sliding later in
+  the day if that slot is taken. That serves hybrid classes with a real online component,
+  and students whose case worker credits the full hours. A class already meeting its
+  credit hours or more shows no note and no switch.
+- **Every duration is computed from exact minutes** and printed to 2 decimals with
+  trailing zeros trimmed: 12:00–12:50 is `0.83`, 10:00–11:40 is `1.67`, 9:00–12:20 is
+  `3.33`, 14:00–16:45 is `2.75`, 90 minutes is `1.5`. The totals column and the hours
+  panel use the same precision, so they can never disagree.
+- Study is laid out in 1.5-hour blocks (the final block shorter or longer to hit the
+  exact total) on Tue & Thu from the day start time, skipping claimed intervals,
+  overflowing to Fri, Sat, Sun, Mon, Wed if needed.
 - DHS 816 lists **every** day of the week that carries attendance blocks that month;
   DHS 819/817 list every day carrying study blocks — with an optional start-day /
   end-day clip for partial months. Day letters cover the full week (M, Tu, W, Th, F,
-  Sa, Su).
+  Sa, Su), so a Saturday class prints `Sa 8/29`.
 - Lets you pick any combination of the three forms with checkboxes (none selected by
   default); generates and downloads only the ones you check.
 - Prints the date only on the **first** class row of each day (matching the official forms).
 - Formats exactly like the paper forms: dates `M/D` (no leading zeros), times `H:MM` with
-  no AM/PM, totals as decimals (`1.5`).
+  no AM/PM, totals as decimals.
 - Leaves all signature / instructor / "Department Use" fields **blank** so the student
   signs in Adobe after download.
-- Overflows cleanly from page 1 to page 2 of each form.
+- Overflows cleanly from page 1 to page 2 of each form — and **never silently truncates**.
+  A month with more rows than one copy of a form holds continues into an additional filled
+  copy of the same blank form, named with a `_continued` suffix, and the student is told
+  plainly to submit both. The continuation's first row carries its date even when one
+  day's rows are split across the boundary.
 - Shows a live hours summary below the Classes section (class attendance, study time, and
-  total hrs/week for the checked forms) that reflects the real timetable totals and
-  updates as classes, meetings, or form selections change. The panel is informational
-  only — required hours vary by situation and should be confirmed with the FTW case
-  manager or BTH Campus Contact.
+  total hrs/week for the checked forms) that reflects the real timetable totals — literal
+  meetings plus any remainders switched on for attendance, and the sum of credits for
+  study — and updates as classes, credits, meetings, switches, or form selections change.
+  The panel is informational only — required hours vary by situation and should be
+  confirmed with the FTW case manager or BTH Campus Contact.
 
-Students with only online/asynchronous classes see **no change at all** — leaving every
-toggle off produces output identical to the previous version of the tool.
+Students with only online/asynchronous 3-credit classes see **no change at all** —
+leaving Credits on 3 and every toggle off produces output identical to the previous
+version of the tool.
 
 The filled PDFs stay **fillable**, so the student can still type corrections and sign in
 Adobe before submitting.
@@ -159,13 +174,19 @@ Then open <http://localhost:8000/> in your browser.
 3. Pick the month and year (default to the current month/year). Optionally set start/end
    day for a partial month.
 4. Set the day start time (default **8:00**) and list the classes in order. Times fill in
-   automatically; override a block only if needed.
+   automatically; override a block only if needed. Leave **Credits** on 3 unless a class
+   is worth a different number.
 5. For a class that meets at a set day and time (a Zoom class or an in-person class),
    turn on **"Does this class meet at set times?"** and enter its day(s) and start/end
    times. Online classes with no set meeting time: skip this — the tool handles them.
-6. Click **Generate & download selected forms**.
-7. Open each PDF in Adobe, review, sign (and have the monitor complete Section 1 of the
-   817 if generated), and submit.
+6. If such a class meets for fewer hours than its credits, its row says so and offers
+   **"Add the remaining hours as flexible blocks"**. Leave that off unless the class
+   really has online hours, or the case worker credits the full hours.
+7. Check the hours summary — it shows exactly what the forms will document.
+8. Click **Generate & download selected forms**.
+9. Open each PDF in Adobe, review, sign (and have the monitor complete Section 1 of the
+   817 if generated), and submit. If a month needed more rows than one form holds you
+   also get a file ending **`_continued`** — submit that one too.
 
 ---
 
@@ -180,8 +201,10 @@ there is no server and no use of browser storage. Refreshing the page clears all
 
 `_dev_test.js` runs the same `schedule.js` / `pdffill.js` logic in Node against the real
 blank PDFs to run the acceptance tests (all-async regression against `_dev_golden.json`,
-the mixed scheduled/async scenario, collision detection, odd evening hours, and hours-panel
-consistency):
+the mixed scheduled/async scenario, collision detection, odd evening hours, hours-panel
+consistency, per-class credits, two real 6- and 7-class student schedules with their
+decimal totals and Saturday rows, the `_continued` overflow split read back out of the
+filled PDFs, and the remainder switch being genuinely opt-in):
 
 ```bash
 npm install pdf-lib

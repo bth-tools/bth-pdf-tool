@@ -8,7 +8,7 @@
        can never pair with a stale app.js/schedule.js. Bump ?v= on every release. -->
   <meta http-equiv="Cache-Control" content="no-cache, must-revalidate" />
   <title>Bridge to Hope — DHS Hours Auto-Filler</title>
-  <link rel="stylesheet" href="styles.css?v=4" />
+  <link rel="stylesheet" href="styles.css?v=5" />
 </head>
 <body>
   <main class="wrap">
@@ -68,6 +68,8 @@
         times for you. Does a class meet at a set day and time (like a Zoom class or an in-person
         class)? Turn on “Does this class meet at set times?” and enter its days and times. Online
         classes with no set meeting time: skip that — the tool handles them.</p>
+      <p class="hint">Leave <strong>Credits</strong> on 3 unless a class is worth a different number
+        — it sets that class’s study hours, and how much online class time it earns.</p>
       <div class="day-start">
         <label>Day start time
           <input id="dayStart" type="text" value="8:00" inputmode="numeric" placeholder="8:00" />
@@ -77,6 +79,7 @@
 
       <div class="class-head">
         <span>Class code</span>
+        <span>Credits</span>
         <span>Start <span class="opt">(auto)</span></span>
         <span>End <span class="opt">(auto)</span></span>
         <span></span>
@@ -134,12 +137,18 @@
         <li><strong>Pick the month</strong> — it starts on this month; set a start/end day only
           for part of a month.</li>
         <li><strong>Add your classes</strong> — type each class code in order; the times fill in
-          for you.</li>
+          for you. Leave <strong>Credits</strong> on 3 unless a class is worth a different number.</li>
         <li><strong>Set class times if needed</strong> — Does your class meet at a set day and time
           (like a Zoom class or an in-person class)? Turn on “meets at set times” and enter its
           days and times. Online classes with no set meeting time: skip this — the tool handles
           them.</li>
-        <li><strong>Generate</strong> — your finished PDFs download.</li>
+        <li><strong>If a class meets for fewer hours than its credits</strong>, its row says so and
+          offers to add the rest as flexible blocks. Leave that off unless your class really has
+          online hours, or your case worker credits you the full hours.</li>
+        <li><strong>Check the hours summary</strong> — it shows exactly what the forms will
+          document before you generate them.</li>
+        <li><strong>Generate</strong> — your finished PDFs download. If a month needs more rows than
+          one form holds, you also get a file ending “_continued” — submit that one too.</li>
         <li><strong>Open each PDF</strong> in a reader that lets you sign (like Adobe Acrobat
           Reader or Mac Preview), sign it, and send it to BTH as usual.</li>
       </ol>
@@ -147,8 +156,8 @@
   </div>
 
   <script src="lib/pdf-lib.min.js"></script>
-  <script src="schedule.js?v=4"></script>
-  <script src="pdffill.js?v=4"></script>
-  <script src="app.js?v=4"></script>
+  <script src="schedule.js?v=5"></script>
+  <script src="pdffill.js?v=5"></script>
+  <script src="app.js?v=5"></script>
 </body>
 </html>

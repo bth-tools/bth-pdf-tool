@@ -91,9 +91,11 @@
   }
 
   /* ========================== THE CLASS LIST ================================
-   * Each class is one block on the page: its code, its automatic start/end
-   * times, and the "meets at set times" tick box. Ticking that box opens a
-   * small day/start/end editor underneath, which can hold several days.
+   * Each class is one block on the page: its code, how many credits it carries,
+   * its automatic start/end times, and the "meets at set times" tick box.
+   * Ticking that box opens a small day/start/end editor underneath, which can
+   * hold several days, and — when the class meets for fewer hours than it
+   * carries in credits — a quiet note and one switch offering to add the rest.
    * Every control here calls refreshPlaceholders() so the displayed times and
    * the hours summary update as soon as anything changes.
    */
@@ -124,9 +126,14 @@
   function addClassRow(code) {
     var item = document.createElement("div");
     item.className = "class-item";
+    var creditOpts = "";
+    Sched.CREDIT_OPTIONS.forEach(function (n) {
+      creditOpts += '<option value="' + n + '">' + n + "</option>";
+    });
     item.innerHTML =
       '<div class="class-row">' +
         '<input class="c-code" type="text" placeholder="e.g. ACC 201" autocomplete="off" />' +
+        '<select class="c-credits" aria-label="Credits">' + creditOpts + "</select>" +
         '<input class="c-start" type="text" placeholder="auto" inputmode="numeric" />' +
         '<input class="c-end" type="text" placeholder="auto" inputmode="numeric" />' +
         '<button class="del" type="button" title="Remove">×</button>' +
@@ -139,8 +146,15 @@
         '<div class="meeting-list"></div>' +
         '<button class="add-meeting ghost small" type="button">+ Add another day</button>' +
         '<p class="meet-hint" hidden>Add this class’s meeting day and time.</p>' +
+        '<div class="remainder" hidden>' +
+          '<p class="remainder-note"></p>' +
+          '<label class="check remainder-line">' +
+            '<input class="c-remainder" type="checkbox" /> Add the remaining hours as flexible blocks' +
+          "</label>" +
+        "</div>" +
       "</div>";
     item.querySelector(".c-code").value = code || "";
+    item.querySelector(".c-credits").value = String(Sched.DEFAULT_CREDITS);
     item.querySelector(".class-row .del").addEventListener("click", function () {
       item.remove();
       refreshPlaceholders();
@@ -167,6 +181,8 @@
    * Gathers everything typed on the page into the single plain object that
    * schedule.js expects. A class with the tick box on becomes a list of
    * meetings; a class without it is left for the tool to time automatically.
+   * Every class carries its credits, which is what decides its study hours and
+   * the size of any remainder blocks.
    */
 
   // True once a row has at least one meeting with a day, a start and an end.
@@ -184,6 +200,7 @@
     items.forEach(function (item) {
       var code = item.querySelector(".c-code").value.trim();
       if (!code) return;
+      var credits = parseInt(item.querySelector(".c-credits").value, 10);
       var meets = item.querySelector(".c-meets").checked;
       if (meets) {
         // Scheduled class: collect the completed meeting entries.
@@ -199,12 +216,20 @@
             incomplete++;
           }
         });
-        out.push({ code: code, meetsSetTimes: true, meetings: meetings, incompleteMeetings: incomplete });
+        out.push({
+          code: code,
+          credits: credits,
+          meetsSetTimes: true,
+          meetings: meetings,
+          incompleteMeetings: incomplete,
+          addRemainder: item.querySelector(".c-remainder").checked
+        });
       } else {
         var startMin = Sched.parseTime(item.querySelector(".c-start").value);
         var endMin = Sched.parseTime(item.querySelector(".c-end").value);
         out.push({
           code: code,
+          credits: credits,
           startMin: startMin != null ? startMin : null,
           endMin: endMin != null ? endMin : null
         });
@@ -263,12 +288,33 @@
     items.forEach(function (item) {
       var code = item.querySelector(".c-code").value.trim();
       if (!code) return;
-      var ph = tmpl.asyncPlaceholders[ci++];
+      var idx = ci++;
+      showRemainderOffer(item, tmpl.classInfo[idx]);
+      var ph = tmpl.asyncPlaceholders[idx];
       if (!ph) return; // scheduled class: its times come from the meetings
       item.querySelector(".c-start").placeholder = Sched.formatTime(ph.startMin);
       item.querySelector(".c-end").placeholder = Sched.formatTime(ph.endMin);
     });
     renderHoursPanel(cfg, tmpl);
+  }
+
+  /*
+   * The quiet note and the one switch on a scheduled class row. It appears only
+   * when the class meets for fewer hours than it carries in credits, which is
+   * the only time there is anything to add. The switch stays off unless the
+   * student turns it on; with it off the class documents its real meetings and
+   * nothing else. The numbers come straight from the engine, so the note can
+   * never disagree with the forms.
+   */
+  function showRemainderOffer(item, info) {
+    var box = item.querySelector(".remainder");
+    if (!box) return;
+    var offer = !!info && info.scheduled && info.shortfallMin > 0;
+    box.hidden = !offer;
+    if (!offer) return;
+    box.querySelector(".remainder-note").textContent =
+      "This class meets " + Sched.formatTotal(info.meetingMin) + " of its " +
+      info.credits + (info.credits === 1 ? " credit hour." : " credit hours.");
   }
 
   /* ========================== THE HOURS SUMMARY =============================
@@ -339,6 +385,17 @@
     el.status.className = "status" + (kind ? " " + kind : "");
   }
 
+  /*
+   * A month too big for one copy of a form continues into a second file.
+   * pdffill.js does the cutting (it is the one that knows each form's row
+   * capacity); this only names the files. The first copy keeps the plain
+   * filename, each later one is marked "_continued".
+   */
+  function partSuffix(index) {
+    if (index === 0) return "";
+    return index === 1 ? "_continued" : "_continued" + index;
+  }
+
   /* ============================ MAKING THE PDFS =============================
    * Checks the entries first and refuses with a plain message if something is
    * missing or two set-time classes clash. Then it works out the timetable
@@ -388,31 +445,37 @@
 
       // Fill each ticked form from the same computed rows. Filenames are
       // <form>_<last name>_<Mon><year>.pdf, e.g. DHS816_Attendance_Lee_Aug2026.pdf
+      // A month too big for one copy of a form continues into a second file
+      // with "_continued" on the end rather than losing the extra rows.
       var ln = lastName(cfg.name);
       var tag = res.monAbbr + cfg.year;
-      var jobs = []; // { bytes, filename, overflow }
+      var jobs = [];      // { bytes, filename }
+      var continued = 0;  // extra copies needed beyond the first of each form
       for (var fi = 0; fi < wanted.length; fi++) {
         var form = wanted[fi];
         var blank = await getBlank(form);
-        var out = await Fill.fill(window.PDFLib, blank, form.key, header, res[form.rows]);
-        jobs.push({
-          bytes: out.bytes,
-          filename: form.prefix + ln + "_" + tag + ".pdf",
-          overflow: out.overflow
-        });
+        var parts = Fill.splitIntoForms(res[form.rows], form.key);
+        continued += parts.length - 1;
+        for (var pi = 0; pi < parts.length; pi++) {
+          var out = await Fill.fill(window.PDFLib, blank, form.key, header, parts[pi]);
+          jobs.push({
+            bytes: out.bytes,
+            filename: form.prefix + ln + "_" + tag + partSuffix(pi) + ".pdf"
+          });
+        }
       }
 
       // Stagger the downloads so browsers don't drop the later files.
-      var overflow = 0;
       jobs.forEach(function (job, i) {
-        overflow += job.overflow;
         setTimeout(function () { download(job.bytes, job.filename); }, i * 350);
       });
 
       var noun = jobs.length === 1 ? "PDF" : jobs.length + " PDFs";
-      if (overflow > 0) {
-        setStatus("Done — but " + overflow + " row(s) exceeded the forms’ capacity and were left off. " +
-          "Try clipping the date range.", "err");
+      if (continued > 0) {
+        setStatus("Done. " + noun + " downloaded. " + res.monthYearLabel + " needs more rows " +
+          "than one copy of the form holds, so the rest are in the file" +
+          (continued === 1 ? "" : "s") + " ending “_continued” — sign and submit " +
+          (continued === 1 ? "it" : "them") + " too.", "warn");
       } else {
         setStatus("Done. " + noun + " downloaded. Sign them in Adobe after opening.", "ok");
       }

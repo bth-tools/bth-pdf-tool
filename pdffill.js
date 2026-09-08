@@ -117,6 +117,38 @@
     return true;
   }
 
+  /* ====================== WHEN A MONTH OUTGROWS A FORM ======================
+   * Each form holds a fixed number of rows across its two pages. A busy month
+   * can need more than that, and rows must never be quietly dropped — so the
+   * rows are cut into form-sized parts and each part fills its own copy of the
+   * same blank form. The student is told plainly and submits every copy.
+   *
+   * The paper forms print the date only on the first row of each day. When a
+   * day happens to be cut in half at that boundary, the continuation's first
+   * row gets its date written back in, so no page ever opens on a dateless row.
+   */
+
+  // How many rows one copy of a form holds, across both its pages.
+  function capacity(formKey) {
+    var spec = FORMS[formKey];
+    if (!spec) throw new Error("Unknown form key: " + formKey);
+    return spec.suffixes.length;
+  }
+
+  function splitIntoForms(rows, formKey) {
+    var cap = capacity(formKey);
+    var parts = [];
+    for (var i = 0; i < rows.length; i += cap) {
+      var part = rows.slice(i, i + cap);
+      if (i > 0 && part.length && !part[0].date && part[0].dateFull) {
+        part = part.slice();
+        part[0] = Object.assign({}, part[0], { date: part[0].dateFull });
+      }
+      parts.push(part);
+    }
+    return parts.length ? parts : [[]];
+  }
+
   /*
    * fill(PDFLib, pdfBytes, formKey, header, rows) -> Promise<Uint8Array>
    * header = { name, institution, monthYear }
@@ -166,5 +198,5 @@
     };
   }
 
-  return { fill: fill, FORMS: FORMS };
+  return { fill: fill, capacity: capacity, splitIntoForms: splitIntoForms, FORMS: FORMS };
 });

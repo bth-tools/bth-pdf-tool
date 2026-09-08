@@ -80,17 +80,18 @@ input:focus, select:focus { outline: 2px solid var(--brand); outline-offset: 0; 
 
 .class-head, .class-row {
   display: grid;
-  grid-template-columns: 1fr 96px 96px 36px;
+  grid-template-columns: 1fr 78px 90px 90px 36px;
   gap: 8px;
   align-items: center;
 }
 .class-head { font-size: 0.78rem; color: var(--muted); margin-bottom: 6px; padding: 0 2px; }
 .class-item { margin-bottom: 12px; }
 .class-item .class-row { margin-bottom: 0; }
+.class-row .c-credits { padding-left: 8px; padding-right: 4px; }
 
 /* "Does this class meet at set times?" toggle + meetings editor */
 .meets-line { margin: 6px 2px 0; font-size: 0.85rem; color: var(--muted); }
-.class-item.scheduled .class-row { grid-template-columns: 1fr 36px; }
+.class-item.scheduled .class-row { grid-template-columns: 1fr 78px 36px; }
 .class-item.scheduled .c-start,
 .class-item.scheduled .c-end { display: none; }
 .meetings {
@@ -122,6 +123,12 @@ input:focus, select:focus { outline: 2px solid var(--brand); outline-offset: 0; 
 /* Nudge shown when "meets at set times" is on but no meeting is entered yet */
 .meet-hint { margin: 0 0 8px; color: var(--muted); font-size: 0.82rem; }
 .meet-hint[hidden] { display: none; }
+
+/* Quiet note + opt-in switch shown when a class meets fewer hours than its credits */
+.remainder { margin: 2px 0 6px; }
+.remainder[hidden] { display: none; }
+.remainder-note { margin: 0 0 4px; color: var(--muted); font-size: 0.82rem; }
+.remainder-line { font-size: 0.85rem; color: var(--muted); }
 
 .class-error {
   color: var(--warn);
@@ -171,6 +178,9 @@ button { font: inherit; cursor: pointer; }
 .status { margin: 12px 0 0; font-size: 0.9rem; min-height: 1.2em; }
 .status.err { color: var(--warn); }
 .status.ok { color: var(--ok); }
+/* Generated fine, but there is something the student must not miss — an
+   overflow "_continued" file to submit alongside the main one. */
+.status.warn { color: var(--warn); }
 
 /* Live hours summary panel (below Classes) */
 .hours-panel .hp-note { margin: 0 0 8px; }
@@ -257,17 +267,18 @@ button { font: inherit; cursor: pointer; }
   .grid3 span { display: none; }
   .class-head { display: none; }
   .class-row {
-    grid-template-columns: 1fr 1fr 36px;
-    grid-template-areas: "code code del" "start end del2";
+    grid-template-columns: 78px 1fr 1fr 36px;
+    grid-template-areas: "code code code del" "credits start end del2";
     gap: 8px 8px;
   }
   .class-row .c-code { grid-area: code; }
+  .class-row .c-credits { grid-area: credits; }
   .class-row .c-start { grid-area: start; }
   .class-row .c-end { grid-area: end; }
   .class-row .del { grid-area: del; height: 100%; }
   .class-item.scheduled .class-row {
-    grid-template-columns: 1fr 36px;
-    grid-template-areas: "code del";
+    grid-template-columns: 1fr 78px 36px;
+    grid-template-areas: "code credits del";
   }
   .meeting-head { display: none; }
   .meeting-row {
