@@ -8,7 +8,7 @@
        can never pair with a stale app.js/schedule.js. Bump ?v= on every release. -->
   <meta http-equiv="Cache-Control" content="no-cache, must-revalidate" />
   <title>Bridge to Hope — DHS Hours Auto-Filler</title>
-  <link rel="stylesheet" href="styles.css?v=5" />
+  <link rel="stylesheet" href="styles.css?v=6" />
 </head>
 <body>
   <main class="wrap">
@@ -42,7 +42,7 @@
     </section>
 
     <section class="card">
-      <h2>Month</h2>
+      <h2>Report period</h2>
       <div class="grid3">
         <label>Month
           <select id="month"></select>
@@ -51,15 +51,16 @@
           <input id="year" type="number" min="2020" max="2100" step="1" />
         </label>
         <span></span>
-        <label>Start day <span class="opt">(optional)</span>
-          <select id="startDay"></select>
+        <label>Start date <span class="opt">(optional)</span>
+          <input id="startDate" type="date" />
         </label>
-        <label>End day <span class="opt">(optional)</span>
-          <select id="endDay"></select>
+        <label>End date <span class="opt">(optional)</span>
+          <input id="endDate" type="date" />
         </label>
         <span></span>
       </div>
-      <p class="hint">Leave start/end day on “Full month” unless you only need part of the month.</p>
+      <p class="hint" id="periodHint"></p>
+      <p id="dateError" class="class-error" role="alert" hidden></p>
     </section>
 
     <section class="card">
@@ -94,6 +95,10 @@
       <p class="hint hp-note" id="hpNote">No forms are selected yet — select forms above to see
         what they'll document. If selected, they would document:</p>
       <div class="hours-lines" aria-live="polite">
+        <div class="hours-line period" id="hpPeriodRow">
+          <span class="hp-label">This period</span>
+          <span class="hp-val" id="hpPeriodVal">—</span>
+        </div>
         <div class="hours-line" id="hpClassRow">
           <span class="hp-label">Class attendance</span>
           <span class="hp-val" id="hpClassVal">0 hrs/week</span>
@@ -134,8 +139,11 @@
         <li><strong>Pick your forms</strong> — check the ones you need (816, 817, and/or 819);
           your BTH email says which.</li>
         <li><strong>Type your name and school.</strong></li>
-        <li><strong>Pick the month</strong> — it starts on this month; set a start/end day only
-          for part of a month.</li>
+        <li><strong>Pick the month</strong> — it starts on this month. First-To-Work reports
+          whole Sunday–Saturday weeks, and a week counts for the month its <strong>Friday</strong>
+          falls in, so a form can open or close in the next-door month: September 2026 runs
+          Su 8/30 to Sa 9/26. The dropdown shows each month’s span, and the start/end dates
+          start on the full period — change them only for part of a period.</li>
         <li><strong>Add your classes</strong> — type each class code in order; the times fill in
           for you. Leave <strong>Credits</strong> on 3 unless a class is worth a different number.</li>
         <li><strong>Set class times if needed</strong> — Does your class meet at a set day and time
@@ -156,8 +164,8 @@
   </div>
 
   <script src="lib/pdf-lib.min.js"></script>
-  <script src="schedule.js?v=5"></script>
-  <script src="pdffill.js?v=5"></script>
-  <script src="app.js?v=5"></script>
+  <script src="schedule.js?v=6"></script>
+  <script src="pdffill.js?v=6"></script>
+  <script src="app.js?v=6"></script>
 </body>
 </html>

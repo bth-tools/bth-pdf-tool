@@ -1,7 +1,7 @@
 # Bridge to Hope — DHS Hours Auto-Filler
 
-A single static web page that auto-fills the monthly First-To-Work (TANF) forms for
-student-parents in the **Bridge to Hope** program:
+A single static web page that auto-fills the First-To-Work (TANF) report-period forms
+for student-parents in the **Bridge to Hope** program:
 
 - **DHS 816** *Educational Activity Attendance Form* — gets **Monday & Wednesday** dates.
 - **DHS 819** *Unsupervised Study Timesheet* — gets **Tuesday & Thursday** dates.
@@ -13,6 +13,33 @@ You enter the student, the month, and the class list once, then tick which form(
 want; the tool generates only the selected filled PDFs and downloads them. It runs
 **entirely in the browser** — no backend, no build step, no data ever leaves the device,
 and nothing is stored.
+
+---
+
+## FTW report periods, not calendar months
+
+First-To-Work does not report calendar months. It reports whole **Sunday-to-Saturday
+weeks**, and a week counts for the month its **Friday** falls in. A report month is
+therefore every Sun–Sat week whose Friday lands in that calendar month, which means a
+form legitimately opens or closes in the month next door:
+
+| You pick | The form covers | Weeks |
+| --- | --- | --- |
+| September 2026 | Su 8/30 – Sa 9/26 | 4 |
+| October 2026 | Su 9/27 – Sa 10/31 | 5 |
+| January 2027 | Su 12/27/26 – Sa 1/30/27 | 5 |
+
+- Spans are computed from that one rule for any month of any year — there is no table to
+  keep up to date, and the year boundary needs no special case.
+- The month dropdown shows each span beside the name: *September 2026 (Aug 30–Sep 26)*.
+- Dates from the neighbouring month print with their **real** dates (`Su 8/30`, `M 8/31`).
+- The form's own **Month/Year** field still reads the plain month: *September 2026*.
+- The optional partial-period clip is a pair of **dates** (not day numbers, which would be
+  ambiguous across two calendar months), bounded to the chosen period and defaulting to
+  its full span. A date outside the period is refused.
+- The hours panel states the span plainly: *This period: 4 FTW weeks (Aug 30–Sep 26)*.
+
+Holidays are **not** handled: a class that meets on Labor Day still prints its meeting.
 
 ---
 
@@ -48,6 +75,10 @@ blocks, study blocks fill in around them, and the PDFs report the timetable.
   the day if that slot is taken. That serves hybrid classes with a real online component,
   and students whose case worker credits the full hours. A class already meeting its
   credit hours or more shows no note and no switch.
+- **Every time carries a compact meridiem** — no leading zero, one lowercase letter, no
+  space: `8:00a`, `11:40a`, `12:00p` (noon), `1:30p`, `10:35p`. The on-screen automatic
+  Start/End times and the hours panel use the identical format, so the screen and the
+  paper can never disagree. Duration columns are unchanged decimals.
 - **Every duration is computed from exact minutes** and printed to 2 decimals with
   trailing zeros trimmed: 12:00–12:50 is `0.83`, 10:00–11:40 is `1.67`, 9:00–12:20 is
   `3.33`, 14:00–16:45 is `2.75`, 90 minutes is `1.5`. The totals column and the hours
@@ -55,19 +86,20 @@ blocks, study blocks fill in around them, and the PDFs report the timetable.
 - Study is laid out in 1.5-hour blocks (the final block shorter or longer to hit the
   exact total) on Tue & Thu from the day start time, skipping claimed intervals,
   overflowing to Fri, Sat, Sun, Mon, Wed if needed.
-- DHS 816 lists **every** day of the week that carries attendance blocks that month;
-  DHS 819/817 list every day carrying study blocks — with an optional start-day /
-  end-day clip for partial months. Day letters cover the full week (M, Tu, W, Th, F,
+- DHS 816 lists **every** day of the week that carries attendance blocks in the report
+  period; DHS 819/817 list every day carrying study blocks — with an optional start/end
+  date clip for part of a period. Day letters cover the full week (M, Tu, W, Th, F,
   Sa, Su), so a Saturday class prints `Sa 8/29`.
 - Lets you pick any combination of the three forms with checkboxes (none selected by
   default); generates and downloads only the ones you check.
 - Prints the date only on the **first** class row of each day (matching the official forms).
-- Formats exactly like the paper forms: dates `M/D` (no leading zeros), times `H:MM` with
-  no AM/PM, totals as decimals.
+- Formats exactly like the paper forms: dates `M/D` (no leading zeros), times `H:MMa` /
+  `H:MMp`, totals as decimals. Every value is measured against its own box and set a
+  step smaller if it would not fit, so nothing is ever silently clipped.
 - Leaves all signature / instructor / "Department Use" fields **blank** so the student
   signs in Adobe after download.
 - Overflows cleanly from page 1 to page 2 of each form — and **never silently truncates**.
-  A month with more rows than one copy of a form holds continues into an additional filled
+  A period with more rows than one copy of a form holds continues into an additional filled
   copy of the same blank form, named with a `_continued` suffix, and the student is told
   plainly to submit both. The continuation's first row carries its date even when one
   day's rows are split across the boundary.
@@ -76,7 +108,8 @@ blocks, study blocks fill in around them, and the PDFs report the timetable.
   meetings plus any remainders switched on for attendance, and the sum of credits for
   study — and updates as classes, credits, meetings, switches, or form selections change.
   The panel is informational only — required hours vary by situation and should be
-  confirmed with the FTW case manager or BTH Campus Contact.
+  confirmed with the FTW case manager or BTH Campus Contact. It also names the report
+  period the forms will cover, as neutral context.
 
 Students with only online/asynchronous 3-credit classes see **no change at all** —
 leaving Credits on 3 and every toggle off produces output identical to the previous
@@ -171,8 +204,9 @@ Then open <http://localhost:8000/> in your browser.
 1. Tick the form(s) you want: Class Attendance (816), Unsupervised Study (819), and/or
    Monitored Study (817). Any combination works.
 2. Enter the student name and institution (defaults to **UHMC**).
-3. Pick the month and year (default to the current month/year). Optionally set start/end
-   day for a partial month.
+3. Pick the month and year (default to the current month/year). The dropdown shows the
+   FTW report period each month covers, and the start/end dates start on that full
+   period — narrow them only for part of a period.
 4. Set the day start time (default **8:00**) and list the classes in order. Times fill in
    automatically; override a block only if needed. Leave **Credits** on 3 unless a class
    is worth a different number.
@@ -185,7 +219,7 @@ Then open <http://localhost:8000/> in your browser.
 7. Check the hours summary — it shows exactly what the forms will document.
 8. Click **Generate & download selected forms**.
 9. Open each PDF in Adobe, review, sign (and have the monitor complete Section 1 of the
-   817 if generated), and submit. If a month needed more rows than one form holds you
+   817 if generated), and submit. If a period needed more rows than one form holds you
    also get a file ending **`_continued`** — submit that one too.
 
 ---
@@ -204,7 +238,10 @@ blank PDFs to run the acceptance tests (all-async regression against `_dev_golde
 the mixed scheduled/async scenario, collision detection, odd evening hours, hours-panel
 consistency, per-class credits, two real 6- and 7-class student schedules with their
 decimal totals and Saturday rows, the `_continued` overflow split read back out of the
-filled PDFs, and the remainder switch being genuinely opt-in):
+filled PDFs, and the remainder switch being genuinely opt-in) — plus the report-period
+suite: the 2026 spans against FTW's published calendar, the Friday rule checked directly
+over 2024–2031, four- and five-week periods, the custom date clip, and a measurement of
+every value written into every generated PDF against the box it has to fit:
 
 ```bash
 npm install pdf-lib
@@ -212,5 +249,8 @@ node _dev_test.js
 ```
 
 It writes filled PDFs to `_dev_out/` for inspection. `_dev_golden.json` is a snapshot of
-the original tool's output for all-async configs — the suite fails if that behavior ever
-changes. Not needed to run or deploy the app.
+the original tool's output for all-async configs; the suite fails if the **weekly
+pattern** — which blocks, in what order, on which weekday, with which totals — ever
+departs from it. Only the span of dates and the time format are allowed to differ, which
+is exactly what the report-period and meridiem changes altered. Not needed to run or
+deploy the app.

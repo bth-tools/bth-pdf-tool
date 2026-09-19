@@ -23,10 +23,14 @@
  *    It is laid out in blocks (default 1.5 hr, the last one adjusted to hit the
  *    exact total) on the default study days (Tue & Thu), overflowing to Fri,
  *    Sat, Sun, Mon, Wed.
- * Every duration is computed from exact minutes, so a 12:00-12:50 meeting is
- * 0.83 hours and a 9:00-12:20 meeting is 3.33 — never rounded to a half hour.
+ * Every duration is computed from exact minutes, so a 12:00a-12:50p meeting is
+ * 0.83 hours and a 9:00a-12:20p meeting is 3.33 — never rounded to a half hour.
  * When no class is scheduled and every class is the usual 3 credits, everything
  * reduces exactly to the original Mon/Wed + mirrored Tue/Thu behavior.
+ *
+ * That weekly timetable is then repeated across an FTW REPORT PERIOD rather
+ * than a calendar month — see "FTW report periods" below — and every time is
+ * printed with a compact meridiem (8:00a, 1:30p) so screen and paper agree.
  */
 (function (root, factory) {
   if (typeof module === "object" && module.exports) module.exports = factory();
@@ -77,32 +81,51 @@
 
   /* ===================== WRITING TIMES AND DATES THE WAY =====================
    * ===================== THE PAPER FORMS EXPECT THEM =========================
-   * The DHS forms use a plain 12-hour clock with no AM/PM ("1:30"), dates with
-   * no leading zeros ("9/8"), and hours as decimals ("1.5", "0.83"). These
-   * small helpers are the only place that formatting is decided.
+   * The DHS forms use a 12-hour clock with a COMPACT MERIDIEM — no leading
+   * zero, one lowercase letter, no space ("8:00a", "1:30p") — dates with no
+   * leading zeros ("9/8"), and hours as decimals ("1.5", "0.83"). These small
+   * helpers are the only place that formatting is decided, so the screen and
+   * the printed form can never disagree about a time.
    */
 
   function pad2(n) { return n < 10 ? "0" + n : "" + n; }
 
-  // Minutes-since-midnight -> "H:MM" 12-hour, no AM/PM, no 24h conversion shown.
-  // 480 -> "8:00", 810 (13:30) -> "1:30", 840 (14:00) -> "2:00".
+  /*
+   * Minutes-since-midnight -> "H:MMa" / "H:MMp", 12-hour with the compact
+   * meridiem the forms use.
+   *   480 -> "8:00a"    700 -> "11:40a"   810 (13:30) -> "1:30p"
+   *   720 -> "12:00p" (noon)              0 -> "12:00a" (midnight)
+   * A block ending exactly at midnight (1440) reads "12:00a", not "12:00p".
+   */
   function formatTime(min) {
-    var h24 = Math.floor(min / 60);
+    var h24 = Math.floor(min / 60) % 24;
     var m = min % 60;
     var h12 = h24 % 12;
     if (h12 === 0) h12 = 12;
-    return h12 + ":" + pad2(m);
+    return h12 + ":" + pad2(m) + (h24 < 12 ? "a" : "p");
   }
 
-  // Parse "H:MM" or "HH:MM" (24h or 12h-without-meridiem as entered) -> minutes.
+  /*
+   * Parse a typed time -> minutes. Accepts 24-hour ("13:30"), a bare 12-hour
+   * clock ("1:30", as this tool has always taken), and the same compact
+   * meridiem it now prints ("1:30p", "8:00a") — so a time copied straight off
+   * the screen back into an override box still reads correctly. Longer forms
+   * ("1:30 PM") are accepted too; anything else returns null.
+   */
   function parseTime(str) {
     if (str == null) return null;
     var s = String(str).trim();
-    var m = s.match(/^(\d{1,2}):(\d{2})$/);
+    var m = s.match(/^(\d{1,2}):(\d{2})\s*([aApP])?[mM]?\.?$/);
     if (!m) return null;
     var h = parseInt(m[1], 10);
     var mm = parseInt(m[2], 10);
     if (isNaN(h) || isNaN(mm) || mm > 59) return null;
+    var mer = m[3] ? m[3].toLowerCase() : null;
+    if (mer) {
+      if (h < 1 || h > 12) return null;
+      if (mer === "a" && h === 12) h = 0;
+      else if (mer === "p" && h !== 12) h += 12;
+    }
     return h * 60 + mm;
   }
 
@@ -135,6 +158,93 @@
   function formatDateWithDay(d) {
     var ab = dayAbbr(d);
     return (ab ? ab + " " : "") + formatDate(d);
+  }
+
+  /* =================== FTW REPORT PERIODS (THE FRIDAY RULE) =================
+   * First-To-Work does not report calendar months. It reports whole SUNDAY-TO-
+   * SATURDAY weeks, and a week belongs to the report month its FRIDAY falls
+   * in. So a report month is every Sun-Sat week whose Friday lands in that
+   * calendar month, which is why the September 2026 form opens on Su 8/30 and
+   * closes on Sa 9/26 — and why dates from the neighbouring calendar month
+   * print with their real dates rather than being trimmed away.
+   *
+   * Everything below follows from that one rule and is worked out for any
+   * month of any year, so there is no calendar to keep up to date. The year
+   * boundary needs no special case either: January's period opens in late
+   * December of the year before, December's closes before New Year's.
+   */
+
+  var FRIDAY = 5;
+
+  /*
+   * Whole days since the epoch, ignoring clock time and daylight saving, so
+   * two dates can be compared or subtracted without an hour's drift changing
+   * the answer.
+   */
+  function dayNumber(d) {
+    return Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000);
+  }
+
+  // "YYYY-MM-DD" — the format an <input type="date"> reads and writes.
+  function toISODate(d) {
+    return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
+  }
+
+  /*
+   * A Date, a "YYYY-MM-DD" string, or nothing -> a plain local Date or null.
+   * Parsed by hand rather than with new Date(str): the browser reads a bare
+   * ISO date as UTC midnight, which lands on the day before anywhere west of
+   * Greenwich — including Hawaii, where this tool is used.
+   */
+  function fromISODate(v) {
+    if (v == null || v === "") return null;
+    if (v instanceof Date) return new Date(v.getFullYear(), v.getMonth(), v.getDate());
+    var parts = String(v).split("-");
+    if (parts.length !== 3) return null;
+    var y = parseInt(parts[0], 10), mo = parseInt(parts[1], 10), da = parseInt(parts[2], 10);
+    if (isNaN(y) || isNaN(mo) || isNaN(da)) return null;
+    return new Date(y, mo - 1, da);
+  }
+
+  // "Aug 30–Sep 26"; "Feb 1–28" when the whole period sits inside one month.
+  function periodLabel(start, end) {
+    var from = MON_ABBR[start.getMonth()] + " " + start.getDate();
+    var sameMonth = start.getMonth() === end.getMonth() &&
+                    start.getFullYear() === end.getFullYear();
+    var to = sameMonth ? String(end.getDate())
+                       : MON_ABBR[end.getMonth()] + " " + end.getDate();
+    return from + "–" + to;
+  }
+
+  /*
+   * The report period for one calendar month (month is 0-11): from the SUNDAY
+   * of the week holding that month's first Friday, to the SATURDAY of the week
+   * holding its last Friday.
+   *
+   * Out-of-range day numbers handed to new Date(y, m, d) roll into the
+   * neighbouring month — and the neighbouring year — on their own, which is
+   * exactly the behavior wanted here.
+   *
+   * Returns { start, end, weeks, label, startISO, endISO }.
+   */
+  function reportPeriod(year, month) {
+    var firstOfMonth = new Date(year, month, 1);
+    var firstFriday = 1 + ((FRIDAY - firstOfMonth.getDay() + 7) % 7);
+
+    var lastOfMonth = new Date(year, month + 1, 0);
+    var lastFriday = lastOfMonth.getDate() - ((lastOfMonth.getDay() - FRIDAY + 7) % 7);
+
+    var start = new Date(year, month, firstFriday - 5); // that week's Sunday
+    var end = new Date(year, month, lastFriday + 1);    // that week's Saturday
+
+    return {
+      start: start,
+      end: end,
+      weeks: (dayNumber(end) - dayNumber(start) + 1) / 7,
+      label: periodLabel(start, end),
+      startISO: toISODate(start),
+      endISO: toISODate(end)
+    };
   }
 
   function isScheduled(c) {
@@ -553,25 +663,34 @@
     };
   }
 
-  /* ==================== TURNING ONE WEEK INTO ONE MONTH =====================
+  /* ================ TURNING ONE WEEK INTO ONE REPORT PERIOD =================
    * Everything above plans a single typical week. The rest of the file repeats
-   * that week across the chosen month to produce the actual dated rows the
-   * forms are filled with.
+   * that week across the chosen month's FTW REPORT PERIOD to produce the
+   * actual dated rows the forms are filled with.
    */
 
   /*
-   * Every date in the month that falls on one of the given weekdays. The
-   * optional start/end day is the "part of a month" clip on the Month card.
+   * Every date inside the report period that falls on one of the given
+   * weekdays, narrowed by the optional custom start/end dates on the Report
+   * period card — the "part of a period" clip.
+   *
+   * The period is always the outer bound: a custom date outside it narrows
+   * nothing, so a stray entry can never pull in dates the form does not cover.
    */
-  function qualifyingDates(year, month, weekdays, startDay, endDay) {
-    var daysInMonth = new Date(year, month + 1, 0).getDate();
-    var lo = startDay || 1;
-    var hi = endDay || daysInMonth;
-    if (hi > daysInMonth) hi = daysInMonth;
+  function qualifyingDates(period, weekdays, fromDate, untilDate) {
+    var lo = period.start;
+    var hi = period.end;
+    if (fromDate && dayNumber(fromDate) > dayNumber(lo)) lo = fromDate;
+    if (untilDate && dayNumber(untilDate) < dayNumber(hi)) hi = untilDate;
+
     var out = [];
-    for (var d = lo; d <= hi; d++) {
-      var date = new Date(year, month, d);
-      if (weekdays.indexOf(date.getDay()) !== -1) out.push(date);
+    var hiNum = dayNumber(hi);
+    var cur = new Date(lo.getFullYear(), lo.getMonth(), lo.getDate());
+    while (dayNumber(cur) <= hiNum) {
+      if (weekdays.indexOf(cur.getDay()) !== -1) {
+        out.push(new Date(cur.getFullYear(), cur.getMonth(), cur.getDate()));
+      }
+      cur.setDate(cur.getDate() + 1);
     }
     return out;
   }
@@ -607,45 +726,40 @@
     return rows;
   }
 
-  // ISO-ish week key (Monday-start) for grouping weekly hours.
-  function weekKey(d) {
+  // The Sunday that opens the FTW week a date belongs to.
+  function weekStart(d) {
     var tmp = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-    var day = (tmp.getDay() + 6) % 7; // Mon=0..Sun=6
-    tmp.setDate(tmp.getDate() - day); // back to Monday
-    return tmp.getFullYear() + "-" + (tmp.getMonth() + 1) + "-" + tmp.getDate();
-  }
-
-  function mondayOf(d) {
-    var tmp = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-    var day = (tmp.getDay() + 6) % 7;
-    tmp.setDate(tmp.getDate() - day);
+    tmp.setDate(tmp.getDate() - tmp.getDay()); // back to Sunday
     return tmp;
   }
 
   /*
-   * Class + study hours added up per calendar week, used for reporting.
-   * Each entry is one Monday-to-Sunday week: { label, monday, hours }.
+   * Class + study hours added up per FTW week, used for reporting. Weeks are
+   * grouped Sunday to Saturday — the same weeks the report period is built
+   * from — so a week's total is the total its Friday reports.
+   * Each entry is { label, start, end, hours }.
    */
   function weeklyHours(attendanceRows, studyRows) {
     var map = {};
     function add(rows) {
       for (var i = 0; i < rows.length; i++) {
         var r = rows[i];
-        var k = weekKey(r.dateObj);
-        if (!map[k]) map[k] = { monday: mondayOf(r.dateObj), hours: 0 };
+        var sun = weekStart(r.dateObj);
+        var k = dayNumber(sun);
+        if (!map[k]) map[k] = { start: sun, hours: 0 };
         map[k].hours += r.hours;
       }
     }
     add(attendanceRows);
     add(studyRows);
-    var keys = Object.keys(map).map(function (k) { return map[k]; });
-    keys.sort(function (a, b) { return a.monday - b.monday; });
-    return keys.map(function (w) {
-      var mon = w.monday;
-      var sun = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() + 6);
+    var weeks = Object.keys(map).map(function (k) { return map[k]; });
+    weeks.sort(function (a, b) { return a.start - b.start; });
+    return weeks.map(function (w) {
+      var sat = new Date(w.start.getFullYear(), w.start.getMonth(), w.start.getDate() + 6);
       return {
-        label: formatDate(mon) + "–" + formatDate(sun),
-        monday: mon,
+        label: formatDate(w.start) + "–" + formatDate(sat),
+        start: w.start,
+        end: sat,
         hours: Math.round(w.hours * 100) / 100
       };
     });
@@ -662,9 +776,9 @@
 
   /* ========================= THE ONE ENTRY POINT ============================
    * Hand this the filled-in form and it returns everything needed to build the
-   * PDFs: the dated attendance rows, the dated study rows, the weekly hour
-   * totals and the month label. If the entered meeting times clash it returns
-   * an error message instead, and no PDF is produced.
+   * PDFs: the report period, the dated attendance rows, the dated study rows,
+   * the weekly hour totals and the month label. If the entered meeting times
+   * clash it returns an error message instead, and no PDF is produced.
    */
 
   /*
@@ -673,18 +787,26 @@
    *   name, institution, hanaId,
    *   classes: [{code, credits?, startMin?, endMin?,
    *              meetings?: [{day, startMin, endMin}], addRemainder?}],
-   *   dayStartMin, blockMinutes, month (0-11), year, startDay, endDay
+   *   dayStartMin, blockMinutes, month (0-11), year,
+   *   startDate, endDate        // optional clip, Date or "YYYY-MM-DD"
    * }
+   *
+   * The rows cover the month's FTW REPORT PERIOD, not its calendar days, so a
+   * September form legitimately carries dates in August. The Month/Year field
+   * on the paper form still reads the plain month name and year.
+   *
    * Returns { error } when scheduled meetings collide, otherwise the full result.
    */
   function compute(config) {
     var tmpl = buildWeekTemplate(config);
     if (tmpl.error) return { error: tmpl.error };
 
-    var attDates = qualifyingDates(config.year, config.month,
-      activeWeekdays(tmpl.attendance), config.startDay, config.endDay);
-    var studyDates = qualifyingDates(config.year, config.month,
-      activeWeekdays(tmpl.study), config.startDay, config.endDay);
+    var period = reportPeriod(config.year, config.month);
+    var from = fromISODate(config.startDate);
+    var until = fromISODate(config.endDate);
+
+    var attDates = qualifyingDates(period, activeWeekdays(tmpl.attendance), from, until);
+    var studyDates = qualifyingDates(period, activeWeekdays(tmpl.study), from, until);
 
     var attendanceRows = buildRowsFromTemplate(attDates, tmpl.attendance);
     var studyRows = buildRowsFromTemplate(studyDates, tmpl.study);
@@ -692,6 +814,7 @@
     return {
       error: null,
       template: tmpl,
+      period: period,
       attendanceRows: attendanceRows,
       studyRows: studyRows,
       weekly: weeklyHours(attendanceRows, studyRows),
@@ -705,10 +828,11 @@
   /*
    * What the rest of the app is allowed to use. Everything above that is not
    * listed here is a helper used only inside this file.
-   *   compute            — the whole month, ready for the PDFs
+   *   compute            — the whole report period, ready for the PDFs
    *   buildWeekTemplate  — one week's timetable (what the screen shows)
-   *   parseTime          — read a typed time, e.g. "9:30", into minutes
-   *   formatTime         — turn minutes back into "9:30"
+   *   reportPeriod       — a month's FTW span: { start, end, weeks, label, ... }
+   *   parseTime          — read a typed time, e.g. "9:30" or "1:30p", into minutes
+   *   formatTime         — turn minutes back into "9:30a"
    *   formatTotal        — turn minutes into decimal hours, e.g. "1.5", "0.83"
    *   MONTHS             — month names for the month dropdown
    *   CREDIT_OPTIONS     — the numbers the Credits picker offers
@@ -724,6 +848,7 @@
     parseTime: parseTime,
     formatTime: formatTime,
     formatTotal: formatTotal,
+    reportPeriod: reportPeriod,
     buildWeekTemplate: buildWeekTemplate,
     compute: compute
   };

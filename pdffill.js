@@ -98,12 +98,64 @@
     }
   };
 
+  /* ==================== KEEPING EVERY VALUE INSIDE ITS BOX ==================
+   * A value wider than the box it is typed into does not wrap or spill — the
+   * appearance stream clips it, so the student gets a silently truncated form
+   * ("September 202"). Every value is therefore measured against its own box
+   * and, only if it does not fit, set a little smaller until it does.
+   *
+   * Measuring needs the width of the run of text, which is not always the
+   * rectangle's width: the 816 and 817 are landscape pages whose boxes are
+   * rotated a quarter turn, so their text runs along the rectangle's HEIGHT.
+   * The upright 819 has no rotation and uses the width.
+   *
+   * In practice nothing on the row grid ever needs shrinking — the widest time
+   * a form can print takes about a third of its column — so this only ever
+   * touches a long header value such as "September 2026" on the 817.
+   */
+
+  var FIELD_PADDING = 2;   // points the generated appearance insets, each side
+  var MIN_FONT_SIZE = 7;   // never shrink past legible
+
+  // The widest run of text this field's box can hold, in points.
+  function roomFor(field) {
+    var widgets = field.acroField.getWidgets();
+    var room = Infinity;
+    for (var i = 0; i < widgets.length; i++) {
+      var rect = widgets[i].getRectangle();
+      var turned = false;
+      try {
+        var mk = widgets[i].getAppearanceCharacteristics();
+        var rot = mk ? Number(mk.getRotation()) : 0;
+        turned = !!rot && (Math.abs(rot) % 180 === 90);
+      } catch (e) { /* no /MK entry: an upright box */ }
+      var w = turned ? rect.height : rect.width;
+      if (w < room) room = w;
+    }
+    if (room === Infinity) return 0;
+    return room - FIELD_PADDING * 2;
+  }
+
+  /*
+   * The preferred size, or the largest half-point step below it that fits.
+   * Returns the preferred size untouched whenever it already fits, so the
+   * ordinary row grid prints exactly as it always has.
+   */
+  function fittingSize(font, text, preferred, room) {
+    if (!font || !(room > 0)) return preferred;
+    var size = preferred;
+    while (size > MIN_FONT_SIZE && font.widthOfTextAtSize(text, size) > room) {
+      size -= 0.5;
+    }
+    return size;
+  }
+
   /*
    * Type one value into one named box. Boxes that do not exist in a given form,
    * and values that are empty, are skipped rather than treated as errors — that
    * is how blanks like the signature lines are left for a person to complete.
    */
-  function trySet(form, name, value, fontSize) {
+  function trySet(form, name, value, fontSize, font) {
     var field;
     try {
       field = form.getTextField(name);
@@ -111,8 +163,10 @@
       return false;
     }
     if (value !== "" && value != null) {
-      try { field.setFontSize(fontSize); } catch (e) { /* ignore */ }
-      field.setText(String(value));
+      var text = String(value);
+      try { field.setFontSize(fittingSize(font, text, fontSize, roomFor(field))); }
+      catch (e) { /* ignore */ }
+      field.setText(text);
     }
     return true;
   }
@@ -161,6 +215,10 @@
 
     var pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
     var form = pdfDoc.getForm();
+    // The same font pdf-lib draws the appearances with, so a value is measured
+    // against exactly what will be printed.
+    var font = null;
+    try { font = form.getDefaultFont(); } catch (e) { /* no fitting, then */ }
 
     /* ======================== FILLING IN THE FORM ==========================
      * Student details across the top, then one row per class block down the
@@ -168,10 +226,11 @@
      * reported back so the app can warn instead of silently dropping them.
      */
 
-    // Student details at the top of the page.
-    trySet(form, spec.header.name, header.name, 11);
-    trySet(form, spec.header.institution, header.institution, 11);
-    trySet(form, spec.header.monthYear, header.monthYear, 11);
+    // Student details at the top of the page. A long name, institution or
+    // month is set a step smaller rather than being clipped by its box.
+    trySet(form, spec.header.name, header.name, 11, font);
+    trySet(form, spec.header.institution, header.institution, 11, font);
+    trySet(form, spec.header.monthYear, header.monthYear, 11, font);
 
     // One row per class block, in order down the page and onto page 2.
     var capacity = spec.suffixes.length;
@@ -179,11 +238,11 @@
     for (var i = 0; i < used; i++) {
       var sfx = spec.suffixes[i];
       var r = rows[i];
-      trySet(form, spec.cols.date + sfx, r.date, 9);
-      trySet(form, spec.cols.code + sfx, r.code, 9);
-      trySet(form, spec.cols.start + sfx, r.start, 9);
-      trySet(form, spec.cols.end + sfx, r.end, 9);
-      trySet(form, spec.cols.total + sfx, r.total, 9);
+      trySet(form, spec.cols.date + sfx, r.date, 9, font);
+      trySet(form, spec.cols.code + sfx, r.code, 9, font);
+      trySet(form, spec.cols.start + sfx, r.start, 9, font);
+      trySet(form, spec.cols.end + sfx, r.end, 9, font);
+      trySet(form, spec.cols.total + sfx, r.total, 9, font);
     }
 
     // Saved with the form still editable, so the student can correct a cell and

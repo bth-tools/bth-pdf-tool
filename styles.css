@@ -196,6 +196,16 @@ button { font: inherit; cursor: pointer; }
 }
 .hours-line .hp-val { font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .hours-line.total { border-top: 1px solid var(--line); margin-top: 2px; padding-top: 9px; font-weight: 600; }
+/* The FTW report period the forms will cover. Neutral context rather than a
+   total, so it sits quieter than the hour lines and is ruled off from them. */
+.hours-line.period {
+  color: var(--muted);
+  font-size: 0.88rem;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 2px;
+  padding-bottom: 9px;
+}
+.hours-line.period .hp-val { white-space: normal; text-align: right; }
 .hours-panel.preview .hours-line { color: var(--muted); }
 
 .foot { text-align: center; color: var(--muted); font-size: 0.8rem; margin-top: 10px; }

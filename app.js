@@ -45,11 +45,14 @@
   var el = {
     form816: $("form816"), form819: $("form819"), form817: $("form817"),
     name: $("name"), institution: $("institution"),
-    month: $("month"), year: $("year"), startDay: $("startDay"), endDay: $("endDay"),
+    month: $("month"), year: $("year"),
+    startDate: $("startDate"), endDate: $("endDate"),
+    periodHint: $("periodHint"), dateError: $("dateError"),
     dayStart: $("dayStart"), classList: $("classList"), addClass: $("addClass"),
     classError: $("classError"),
     generate: $("generate"), status: $("status"),
     hoursPanel: $("hoursPanel"), hpNote: $("hpNote"),
+    hpPeriodVal: $("hpPeriodVal"),
     hpClassRow: $("hpClassRow"), hpClassVal: $("hpClassVal"),
     hpStudyRow: $("hpStudyRow"), hpStudyVal: $("hpStudyVal"),
     hpTotalLabel: $("hpTotalLabel"), hpTotalVal: $("hpTotalVal"),
@@ -60,10 +63,24 @@
   // Each blank PDF is downloaded once and kept, so repeat generates are quick.
   var blankBytes = {};
 
-  /* ======================== BUILDING THE DROPDOWNS ==========================
-   * Fills the month and year boxes (defaulting to the current month) and the
-   * optional start/end day lists used for a partial month.
+  /* ====================== THE REPORT PERIOD CONTROLS ========================
+   * First-To-Work reports whole Sunday-to-Saturday weeks, and a week counts
+   * for the month its FRIDAY falls in — so the September 2026 form runs
+   * Su 8/30 to Sa 9/26. schedule.js works every span out from that one rule;
+   * this only shows it.
+   *
+   * The month list carries each span beside its name, and the optional custom
+   * clip is a pair of ordinary date boxes bounded to the chosen period. They
+   * are dates rather than day numbers because a period can straddle two
+   * calendar months, where a bare "30" would be ambiguous.
    */
+
+  function currentPeriod() {
+    var m = parseInt(el.month.value, 10);
+    var y = parseInt(el.year.value, 10);
+    if (isNaN(m) || isNaN(y)) return null;
+    return Sched.reportPeriod(y, m);
+  }
 
   function fillMonthYear() {
     var now = new Date();
@@ -74,20 +91,83 @@
     });
     el.month.value = now.getMonth();
     el.year.value = now.getFullYear();
+    labelMonths();
   }
 
-  function fillDayDropdowns() {
-    [el.startDay, el.endDay].forEach(function (sel) {
-      sel.innerHTML = "";
-      var full = document.createElement("option");
-      full.value = ""; full.textContent = "Full month";
-      sel.appendChild(full);
-      for (var d = 1; d <= 31; d++) {
-        var o = document.createElement("option");
-        o.value = d; o.textContent = d;
-        sel.appendChild(o);
-      }
+  /*
+   * Each month option reads "September 2026 (Aug 30–Sep 26)". The spans depend
+   * on the year, so the labels are rewritten whenever the year changes.
+   */
+  function labelMonths() {
+    var y = parseInt(el.year.value, 10);
+    Array.prototype.slice.call(el.month.options).forEach(function (o, i) {
+      o.textContent = isNaN(y)
+        ? Sched.MONTHS[i]
+        : Sched.MONTHS[i] + " " + y + " (" + Sched.reportPeriod(y, i).label + ")";
     });
+  }
+
+  /*
+   * Point the custom date boxes at the chosen period: bounded to it, and
+   * — when the period itself changed — reset to its full span, which is the
+   * default. The hint underneath explains the period in the student's terms.
+   */
+  function syncPeriodDates(resetToFullPeriod) {
+    var p = currentPeriod();
+    [el.startDate, el.endDate].forEach(function (inp) {
+      inp.min = p ? p.startISO : "";
+      inp.max = p ? p.endISO : "";
+    });
+    if (p && resetToFullPeriod) {
+      el.startDate.value = p.startISO;
+      el.endDate.value = p.endISO;
+    }
+    el.periodHint.textContent = p
+      ? "First-To-Work weeks run Sunday–Saturday, and a week counts for the month its " +
+        "Friday falls in — so the " + Sched.MONTHS[parseInt(el.month.value, 10)] + " " +
+        el.year.value + " form covers " + p.label + ". Change the dates only if you need " +
+        "part of that period."
+      : "Pick a month and year to see the period the form will cover.";
+    checkDates();
+  }
+
+  function showDateError(message) {
+    el.dateError.textContent = message || "";
+    el.dateError.hidden = !message;
+  }
+
+  /*
+   * The custom dates have to sit inside the report period, and start cannot
+   * come after end. Browsers enforce min/max on the picker but will still take
+   * a typed-in date, so it is checked here too. Returns true when they are
+   * usable; Generate refuses while they are not.
+   */
+  function checkDates() {
+    var p = currentPeriod();
+    if (!p) { showDateError(null); return true; }
+    var from = el.startDate.value;
+    var until = el.endDate.value;
+    // ISO dates sort as plain text, so these comparisons are exact.
+    var outside = (from && (from < p.startISO || from > p.endISO)) ||
+                  (until && (until < p.startISO || until > p.endISO));
+    if (outside) {
+      showDateError("That date is outside the " + Sched.MONTHS[parseInt(el.month.value, 10)] +
+        " " + el.year.value + " report period (" + p.label + ") — pick a date inside it.");
+      return false;
+    }
+    if (from && until && from > until) {
+      showDateError("Start date is after end date.");
+      return false;
+    }
+    showDateError(null);
+    return true;
+  }
+
+  // "2026-09-06" -> "9/6", for the quiet note about a narrowed period.
+  function shortDate(iso) {
+    var parts = String(iso).split("-");
+    if (parts.length !== 3) return iso;
+    return parseInt(parts[1], 10) + "/" + parseInt(parts[2], 10);
   }
 
   /* ========================== THE CLASS LIST ================================
@@ -249,8 +329,8 @@
       blockMinutes: BLOCK_MINUTES,
       month: parseInt(el.month.value, 10),
       year: parseInt(el.year.value, 10),
-      startDay: el.startDay.value ? parseInt(el.startDay.value, 10) : null,
-      endDay: el.endDay.value ? parseInt(el.endDay.value, 10) : null
+      startDate: el.startDate.value || null,
+      endDate: el.endDate.value || null
     };
   }
 
@@ -329,6 +409,28 @@
     var broken = !tmpl || tmpl.error;
     var classMin = broken ? 0 : tmpl.classWeekMin;
     var studyMin = broken ? 0 : tmpl.studyWeekMin;
+
+    /*
+     * One plain line of context: how many FTW weeks the chosen month covers
+     * and the dates they run between. It states what the form spans and
+     * nothing more — whether that is enough hours is between the student and
+     * their case manager. If the dates below have been narrowed, that is noted
+     * quietly on the end rather than changing the period itself.
+     */
+    var period = (!isNaN(cfg.month) && !isNaN(cfg.year))
+      ? Sched.reportPeriod(cfg.year, cfg.month) : null;
+    if (!period) {
+      el.hpPeriodVal.textContent = "\u2014";
+    } else {
+      var line = period.weeks + " FTW week" + (period.weeks === 1 ? "" : "s") +
+        " (" + period.label + ")";
+      var from = cfg.startDate || period.startISO;
+      var until = cfg.endDate || period.endISO;
+      if (from !== period.startISO || until !== period.endISO) {
+        line += " \u00b7 using " + shortDate(from) + "\u2013" + shortDate(until);
+      }
+      el.hpPeriodVal.textContent = line;
+    }
 
     var want816 = el.form816.checked;
     var wantStudy = el.form819.checked || el.form817.checked;
@@ -413,9 +515,7 @@
     if (!cfg.classes.length) { setStatus("Add at least one class.", "err"); return; }
     if (!cfg.name) { setStatus("Enter the student name first.", "err"); return; }
     if (isNaN(cfg.month) || isNaN(cfg.year)) { setStatus("Pick a month and year.", "err"); return; }
-    if (cfg.startDay && cfg.endDay && cfg.startDay > cfg.endDay) {
-      setStatus("Start day is after end day.", "err"); return;
-    }
+    if (!checkDates()) { setStatus(el.dateError.textContent, "err"); return; }
     for (var ci = 0; ci < cfg.classes.length; ci++) {
       var cc = cfg.classes[ci];
       if (cc.meetsSetTimes && !cc.meetings.length) {
@@ -543,12 +643,25 @@
 
   function init() {
     fillMonthYear();
-    fillDayDropdowns();
+    syncPeriodDates(true);
     addClassRow(""); // start empty: one placeholder row reading "e.g. ACC 201"
     refreshPlaceholders();
 
     el.addClass.addEventListener("click", function () { addClassRow(""); refreshPlaceholders(); });
     el.dayStart.addEventListener("input", refreshPlaceholders);
+
+    // Changing the month or year moves the whole report period, so the date
+    // boxes are re-bounded and reset to the new full span.
+    el.month.addEventListener("change", function () {
+      syncPeriodDates(true); renderHoursPanel();
+    });
+    el.year.addEventListener("input", function () {
+      labelMonths(); syncPeriodDates(true); renderHoursPanel();
+    });
+    [el.startDate, el.endDate].forEach(function (n) {
+      n.addEventListener("change", function () { checkDates(); renderHoursPanel(); });
+      n.addEventListener("input", function () { checkDates(); renderHoursPanel(); });
+    });
     [el.form816, el.form819, el.form817].forEach(function (n) {
       n.addEventListener("change", function () { renderHoursPanel(); });
     });
