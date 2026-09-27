@@ -16,6 +16,26 @@ and nothing is stored.
 
 ---
 
+## Install as an app
+
+Open the hosted tool in Chrome or Edge and choose **Install BTH Tool** (or the
+browser's **Install this site as an app** menu option). The installed app opens in
+its own window and uses the Bridge to Hope bridge-and-sun icon. Choose a desktop
+shortcut if the browser offers that option. On iPhone or iPad, use Safari's
+**Share → Add to Home Screen**.
+
+If you installed the tool before these icons were added and still see the old
+icon, uninstall that shortcut/app and reinstall from the updated site. Browser
+installation does not add offline support; an internet connection is still needed.
+
+`manifest.webmanifest` uses relative URLs so installation works under the GitHub
+Pages repository path. The PNGs in `icons/` use the bridge-and-sun portion of the
+official `BTH_logo.png` from `BTH Tool/Updated BTH Tool Training Dossier/Reusable Assets/`,
+centered on white. Sizes are 32px (browser tab), 180px (Apple touch icon), and
+192px/512px (installed app).
+
+---
+
 ## FTW report periods, not calendar months
 
 First-To-Work does not report calendar months. It reports whole **Sunday-to-Saturday
