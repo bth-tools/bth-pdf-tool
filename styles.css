@@ -1,4 +1,10 @@
 :root {
+  color-scheme: light;
+  --field: #ffffff;
+  --code-bg: #eef1f4;
+  --hover: #f0f6fc;
+  --button-ink: #ffffff;
+  --warn-line: #f0cfae;
   --bg: #f4f6f8;
   --card: #ffffff;
   --ink: #1c2430;
@@ -13,6 +19,33 @@
   --radius: 10px;
   --shadow: 0 1px 3px rgba(20, 30, 45, 0.08), 0 1px 2px rgba(20, 30, 45, 0.06);
 }
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #10161e;
+  --card: #19222e;
+  --field: #141b24;
+  --ink: #e8eef6;
+  --muted: #b0bdcd;
+  --line: #40516a;
+  --brand: #83bdff;
+  --brand-dark: #a9d2ff;
+  --button-ink: #10161e;
+  --code-bg: #263449;
+  --hover: #25364a;
+  --ok: #8cdda5;
+  --ok-bg: #193628;
+  --warn: #ffbe86;
+  --warn-bg: #392a20;
+  --warn-line: #826047;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+.theme-picker { display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 8px; margin-top: 12px; }
+.theme-picker select { width: auto; }
+button:focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; }
+input::placeholder { color: var(--muted); opacity: 1; }
+input[type="checkbox"] { accent-color: var(--brand); }
 
 * { box-sizing: border-box; }
 
@@ -51,7 +84,7 @@ input, select {
   padding: 9px 10px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #fff;
+  background: var(--field);
   width: 100%;
 }
 input:focus, select:focus { outline: 2px solid var(--brand); outline-offset: 0; border-color: var(--brand); }
@@ -59,7 +92,7 @@ input:focus, select:focus { outline: 2px solid var(--brand); outline-offset: 0; 
 .opt { color: var(--muted); font-weight: 400; font-size: 0.8em; }
 .hint { color: var(--muted); font-size: 0.82rem; margin: 8px 0 0; }
 .hint.inline { margin: 0; }
-.hint code, code { background: #eef1f4; padding: 1px 5px; border-radius: 4px; font-size: 0.85em; }
+.hint code, code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; font-size: 0.85em; }
 
 .form-picker { display: flex; flex-direction: column; gap: 10px; }
 .check {
@@ -109,7 +142,7 @@ input:focus, select:focus { outline: 2px solid var(--brand); outline-offset: 0; 
 .meeting-row { margin-bottom: 8px; }
 .meeting-row .del {
   border: 1px solid var(--line);
-  background: #fff;
+  background: var(--field);
   color: var(--warn);
   border-radius: 8px;
   height: 38px;
@@ -133,7 +166,7 @@ input:focus, select:focus { outline: 2px solid var(--brand); outline-offset: 0; 
 .class-error {
   color: var(--warn);
   background: var(--warn-bg);
-  border: 1px solid #f0cfae;
+  border: 1px solid var(--warn-line);
   padding: 8px 11px;
   border-radius: 8px;
   font-size: 0.88rem;
@@ -141,7 +174,7 @@ input:focus, select:focus { outline: 2px solid var(--brand); outline-offset: 0; 
 }
 .class-row .del {
   border: 1px solid var(--line);
-  background: #fff;
+  background: var(--field);
   color: var(--warn);
   border-radius: 8px;
   height: 38px;
@@ -154,16 +187,16 @@ input:focus, select:focus { outline: 2px solid var(--brand); outline-offset: 0; 
 button { font: inherit; cursor: pointer; }
 .ghost {
   margin-top: 4px;
-  background: #fff;
+  background: var(--field);
   border: 1px dashed var(--brand);
   color: var(--brand);
   padding: 9px 14px;
   border-radius: 8px;
 }
-.ghost:hover { background: #f0f6fc; }
+.ghost:hover { background: var(--hover); }
 .primary {
   background: var(--brand);
-  color: #fff;
+  color: var(--button-ink);
   border: none;
   padding: 13px 18px;
   border-radius: 9px;
@@ -213,7 +246,7 @@ button { font: inherit; cursor: pointer; }
 /* How-to button + Quick Reference modal */
 .help-btn {
   margin-top: 12px;
-  background: #fff;
+  background: var(--field);
   border: 1px solid var(--brand);
   color: var(--brand);
   padding: 8px 16px;
@@ -221,7 +254,7 @@ button { font: inherit; cursor: pointer; }
   font-size: 0.9rem;
   font-weight: 600;
 }
-.help-btn:hover { background: #f0f6fc; }
+.help-btn:hover { background: var(--hover); }
 .help-btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 
 .modal-overlay {

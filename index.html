@@ -15,7 +15,8 @@
   <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png" />
-  <link rel="stylesheet" href="styles.css?v=6" />
+  <script src="theme.js?v=7"></script>
+  <link rel="stylesheet" href="styles.css?v=7" />
 </head>
 <body>
   <main class="wrap">
@@ -24,6 +25,13 @@
       <p class="sub">First-To-Work attendance &amp; study-time auto-filler<br />
         <span class="muted">DHS 816 (class attendance), DHS 819 (unsupervised study) &amp; DHS 817 (monitored study)</span></p>
       <button id="howToBtn" type="button" class="help-btn">How to use</button>
+      <label class="theme-picker" for="themeSelect">Appearance
+        <select id="themeSelect">
+          <option value="system">System</option>
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+        </select>
+      </label>
     </header>
 
     <section class="card">
@@ -77,7 +85,11 @@
         class)? Turn on “Does this class meet at set times?” and enter its days and times. Online
         classes with no set meeting time: skip that — the tool handles them.</p>
       <p class="hint">Leave <strong>Credits</strong> on 3 unless a class is worth a different number
-        — it sets that class’s study hours, and how much online class time it earns.</p>
+        — it sets automatic online attendance and the optional flexible-hour allowance.
+        Study hours on both study forms match each class’s recorded attendance each FTW week.</p>
+      <p class="hint">Recurring UH observed holidays are skipped for classes with set meeting times,
+        including their flexible blocks and study. Async classes (set-times switch off) keep
+        holiday hours. Spring break and other non-instructional days are not removed automatically.</p>
       <div class="day-start">
         <label>Day start time
           <input id="dayStart" type="text" value="8:00" inputmode="numeric" placeholder="8:00" />
@@ -108,18 +120,19 @@
         </div>
         <div class="hours-line" id="hpClassRow">
           <span class="hp-label">Class attendance</span>
-          <span class="hp-val" id="hpClassVal">0 hrs/week</span>
+          <span class="hp-val" id="hpClassVal">0 hrs/period</span>
         </div>
         <div class="hours-line" id="hpStudyRow">
           <span class="hp-label">Study time</span>
-          <span class="hp-val" id="hpStudyVal">0 hrs/week</span>
+          <span class="hp-val" id="hpStudyVal">0 hrs/period</span>
         </div>
         <div class="hours-line total">
           <span class="hp-label" id="hpTotalLabel">Total documented</span>
-          <span class="hp-val" id="hpTotalVal">0 hrs/week</span>
+          <span class="hp-val" id="hpTotalVal">0 hrs/period</span>
         </div>
       </div>
-      <p class="hint">Required hours vary by situation—confirm your requirement with your FTW
+      <p class="hint">Totals cover the selected report dates, including holiday adjustments.
+        Required hours vary by situation—confirm your requirement with your FTW
         case manager or BTH Campus Contact.</p>
     </section>
 
@@ -132,7 +145,8 @@
     </section>
 
     <footer class="foot">
-      <span>Runs entirely in your browser. Nothing is uploaded or stored.</span>
+      <span>Runs entirely in your browser. Form data is never uploaded or saved.
+        Only your appearance preference is saved on this device.</span>
     </footer>
   </main>
 
@@ -143,6 +157,8 @@
         <button id="howToClose" type="button" class="modal-close" aria-label="Close">&times;</button>
       </div>
       <ol class="guide-steps">
+        <li><strong>Choose your appearance</strong> — use System, Light, or Dark at the top.
+          This changes the screen only; your PDFs keep their original appearance.</li>
         <li><strong>Pick your forms</strong> — check the ones you need (816, 817, and/or 819);
           your BTH email says which.</li>
         <li><strong>Type your name and school.</strong></li>
@@ -161,7 +177,11 @@
           offers to add the rest as flexible blocks. Leave that off unless your class really has
           online hours, or your case worker credits you the full hours.</li>
         <li><strong>Check the hours summary</strong> — it shows exactly what the forms will
-          document before you generate them.</li>
+          document for the selected dates before you generate them. Both study forms match
+          recorded attendance per class and FTW week, including any flexible hours selected.
+          UH observed holidays are skipped for set-time classes; their study hours are reduced
+          or moved within the same week to match. Async classes keep holiday hours.
+          Spring break, other non-instructional days, and one-off closures are not filtered.</li>
         <li><strong>Generate</strong> — your finished PDFs download. If a month needs more rows than
           one form holds, you also get a file ending “_continued” — submit that one too.</li>
         <li><strong>Open each PDF</strong> in a reader that lets you sign (like Adobe Acrobat
@@ -171,8 +191,8 @@
   </div>
 
   <script src="lib/pdf-lib.min.js"></script>
-  <script src="schedule.js?v=6"></script>
-  <script src="pdffill.js?v=6"></script>
-  <script src="app.js?v=6"></script>
+  <script src="schedule.js?v=8"></script>
+  <script src="pdffill.js?v=8"></script>
+  <script src="app.js?v=8"></script>
 </body>
 </html>

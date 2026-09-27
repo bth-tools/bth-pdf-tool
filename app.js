@@ -261,8 +261,8 @@
    * Gathers everything typed on the page into the single plain object that
    * schedule.js expects. A class with the tick box on becomes a list of
    * meetings; a class without it is left for the tool to time automatically.
-   * Every class carries its credits, which is what decides its study hours and
-   * the size of any remainder blocks.
+   * Credits determine automatic async attendance and flexible allowances;
+   * both study forms follow the resulting attendance.
    */
 
   // True once a row has at least one meeting with a day, a start and an end.
@@ -406,9 +406,10 @@
   function renderHoursPanel(cfg, tmpl) {
     if (!cfg) cfg = buildConfig();
     if (tmpl === undefined) tmpl = Sched.buildWeekTemplate(cfg);
-    var broken = !tmpl || tmpl.error;
-    var classMin = broken ? 0 : tmpl.classWeekMin;
-    var studyMin = broken ? 0 : tmpl.studyWeekMin;
+    var dated = tmpl && !tmpl.error ? Sched.compute(cfg) : null;
+    var broken = !dated || dated.error;
+    var classMin = broken ? 0 : dated.attendanceRows.reduce(function (sum, row) { return sum + row.hours * 60; }, 0);
+    var studyMin = broken ? 0 : dated.studyRows.reduce(function (sum, row) { return sum + row.hours * 60; }, 0);
 
     /*
      * One plain line of context: how many FTW weeks the chosen month covers
@@ -443,9 +444,9 @@
 
     el.hpClassRow.hidden = !showClass;
     el.hpStudyRow.hidden = !showStudy;
-    el.hpClassVal.textContent = broken ? "—" : Sched.formatTotal(classMin) + " hrs/week";
-    el.hpStudyVal.textContent = broken ? "—" : Sched.formatTotal(studyMin) + " hrs/week";
-    el.hpTotalVal.textContent = broken ? "—" : Sched.formatTotal(totalMin) + " hrs/week";
+    el.hpClassVal.textContent = broken ? "—" : Sched.formatTotal(classMin) + " hrs/period";
+    el.hpStudyVal.textContent = broken ? "—" : Sched.formatTotal(studyMin) + " hrs/period";
+    el.hpTotalVal.textContent = broken ? "—" : Sched.formatTotal(totalMin) + " hrs/period";
     el.hpTotalLabel.textContent = anyForm ? "Total documented" : "Total they would document";
     el.hpNote.hidden = anyForm;
     el.hoursPanel.classList.toggle("preview", !anyForm);

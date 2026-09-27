@@ -319,8 +319,8 @@ async function main() {
     Sched.formatTotal(t4.attendance[1][0].endMin - t4.attendance[1][0].startMin) === "4");
   check("test4: class 4 hrs/wk", t4.classWeekMin === 240, String(t4.classWeekMin));
   // Study follows CREDITS, not attendance: a default 3-credit class earns 3 hrs
-  // of study even though it documents 4 hours of class time.
-  check("test4: study 3 hrs/wk (credits, not attendance)", t4.studyWeekMin === 180, String(t4.studyWeekMin));
+  // of study under the old rule; now it matches 4 hours of class time.
+  check("test4: study matches 4 hrs attendance", t4.studyWeekMin === 240, String(t4.studyWeekMin));
   check("test4: meets more than its credits, so no remainder offer",
     t4.classInfo[0].shortfallMin === 0);
   check("test4: only Monday has attendance",
@@ -331,13 +331,14 @@ async function main() {
   /* ================= TEST 5 — panel totals match the PDFs =================
    * The panel shows weekly rates; the PDFs carry per-date rows. Because a
    * report period is nothing but whole Sun–Sat weeks, EVERY week on the form
-   * must sum to classWeekMin + studyWeekMin — no partial weeks to allow for.
+   * may be lower than the template when UH holidays remove scheduled time.
    */
   console.log("\nTEST 5 — hours panel vs generated rows (every FTW week on the form)");
   function everyWeekCheck(label, res) {
     const want = Math.round(((res.classWeekMin + res.studyWeekMin) / 60) * 100) / 100;
-    check(label + ": all " + res.weekly.length + " weeks = " + want + " hrs",
-      res.weekly.length === res.period.weeks && res.weekly.every(w => w.hours === want),
+    check(label + ": holiday weeks do not exceed the normal " + want + " hrs",
+      res.weekly.length === res.period.weeks && res.weekly.every(w => w.hours <= want) &&
+      Math.abs(sumHours(res.attendanceRows) - sumHours(res.studyRows)) < 0.00001,
       JSON.stringify(res.weekly.map(w => w.label + "=" + w.hours)));
   }
   everyWeekCheck("test5/t1", res1);
@@ -422,11 +423,11 @@ async function main() {
     remH.length === 1 && remH[0].b.code === "SOC 280" && remH[0].d === 3 &&
     Sched.formatTotal(remH[0].b.endMin - remH[0].b.startMin) === "1.75",
     JSON.stringify(remH.map(r => r.d + " " + fmt(r.b))));
-  check("hilo: study totals 17 hrs/week", tH.studyWeekMin === 17 * 60, String(tH.studyWeekMin));
+  check("hilo: study totals 935 minutes/week", tH.studyWeekMin === 935, String(tH.studyWeekMin));
   const studyH = {};
   for (let d = 0; d < 7; d++) tH.study[d].forEach(b => { studyH[b.code] = (studyH[b.code] || 0) + (b.endMin - b.startMin); });
-  check("hilo: each class earns exactly its credits in study",
-    tH.classInfo.every(c => studyH[c.code] === c.creditMin), JSON.stringify(studyH));
+  check("hilo: each class studies exactly its attendance minutes",
+    tH.classInfo.every(c => studyH[c.code] === c.attendanceMin), JSON.stringify(studyH));
   // Switches left off document literal meetings only.
   const infoH = Object.fromEntries(tH.classInfo.map(c => [c.code, c]));
   check("hilo: SOC 365 documents its 2.5 literal hours only",
@@ -482,17 +483,17 @@ async function main() {
     infoL["LAW 555H"].attendanceMin === 90 && infoL["LAW 555H"].remainderMin === 0 &&
     Sched.formatTotal(infoL["LAW 555H"].meetingMin) === "1.5" && infoL["LAW 555H"].credits === 4 &&
     infoL["LAW 555H"].shortfallMin > 0);
-  check("law: LAW 590P documents 3.33, offers no switch, studies 2",
+  check("law: LAW 590P documents and studies 3.33, offers no switch",
     Sched.formatTotal(infoL["LAW 590P"].attendanceMin) === "3.33" &&
     infoL["LAW 590P"].shortfallMin === 0 &&
-    Sched.formatTotal(infoL["LAW 590P"].studyMin) === "2");
+    Sched.formatTotal(infoL["LAW 590P"].studyMin) === "3.33");
   check("law: LWPA 581 switch on — 0.5 remainder",
     Sched.formatTotal(infoL["LWPA 581"].remainderMin) === "0.5", String(infoL["LWPA 581"].remainderMin));
   check("law: LAW 523 documents 1.67",
     Sched.formatTotal(infoL["LAW 523"].attendanceMin) === "1.67");
   check("law: attendance panel = 14.5 hrs/week",
     Sched.formatTotal(tL.classWeekMin) === "14.5", Sched.formatTotal(tL.classWeekMin));
-  check("law: study panel = 18 hrs/week", Sched.formatTotal(tL.studyWeekMin) === "18",
+  check("law: study panel = 14.5 hrs/week", Sched.formatTotal(tL.studyWeekMin) === "14.5",
     Sched.formatTotal(tL.studyWeekMin));
   // Saturday rows must print the "Sa" day letter.
   const satRows = resL.attendanceRows.filter(r => r.dateObj.getDay() === 6);
@@ -534,7 +535,7 @@ async function main() {
   check("test9: off — only the real Monday meeting is documented",
     off.template.attendance[1].length === 1 && off.template.attendance[3].length === 0 &&
     off.classWeekMin === 90, String(off.classWeekMin));
-  check("test9: off — study is still the full 3 credits", off.studyWeekMin === 180);
+  check("test9: off — study matches 90 attendance minutes", off.studyWeekMin === 90);
   check("test9: off — the row is told it is 1.5 of 3",
     Sched.formatTotal(off.template.classInfo[0].meetingMin) === "1.5" &&
     off.template.classInfo[0].shortfallMin === 90);
@@ -666,8 +667,8 @@ async function main() {
   // remainder mirrors onto Monday and slides past the meetings already there.
   const remRows = resT3.attendanceRows.filter(r => r.code === "LAW 555H" && r.total === "2.5");
   console.log("  LAW 555H remainder rows:", remRows.map(r => `${r.dateFull} ${r.start}-${r.end}`).join(" | "));
-  check("T3: the LAW 555H remainder is M 2:45p–5:15p = 2.5 on every Monday of the period",
-    remRows.length === 4 && remRows.every(r => r.dateObj.getDay() === 1 &&
+  check("T3: the LAW 555H remainder skips Labor Day and retains its a/p times",
+    remRows.length === 3 && remRows.every(r => r.dateObj.getDay() === 1 && !Sched.uhHoliday(r.dateObj) &&
       r.start === "2:45p" && r.end === "5:15p"),
     JSON.stringify(remRows.map(r => `${r.dateFull} ${r.start}-${r.end}`)));
   // Tuesday study runs into the evening and must print p times.
@@ -681,12 +682,11 @@ async function main() {
   check("T3: every law row sits inside Aug 30–Sep 26",
     resT3.attendanceRows.concat(resT3.studyRows).every(r =>
       r.dateObj >= resT3.period.start && r.dateObj <= resT3.period.end));
-  // Labor Day is 9/7/2026: holiday handling is deliberately NOT part of this
-  // change, so its Monday meetings must still print.
+  // Labor Day is 9/7/2026: scheduled attendance must be excluded.
   const laborDay = resT3.attendanceRows.filter(r => r.dateFull === "M 9/7");
   console.log("  Labor Day M 9/7:", laborDay.map(r => `${r.code} ${r.start}-${r.end}`).join(" | "));
-  check("T3: Labor Day M 9/7 still prints its Monday meetings (no holiday handling)",
-    laborDay.length > 0 && laborDay.some(r => r.code === "LAW 523"),
+  check("T3: Labor Day M 9/7 excludes all set-time class blocks",
+    laborDay.length === 0,
     JSON.stringify(laborDay.map(r => r.code)));
   await fillAll("T3_law_sep2026", resT3, {
     name: cfgT3.name, institution: cfgT3.institution, hanaId: "", monthYear: resT3.monthYearLabel

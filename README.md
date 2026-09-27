@@ -12,7 +12,12 @@ for student-parents in the **Bridge to Hope** program:
 You enter the student, the month, and the class list once, then tick which form(s) you
 want; the tool generates only the selected filled PDFs and downloads them. It runs
 **entirely in the browser** — no backend, no build step, no data ever leaves the device,
-and nothing is stored.
+and no form data is stored. Only the appearance preference is saved locally.
+
+Use **Appearance → System, Light, or Dark** at the top of the page. System follows
+the device's color preference. Light and Dark are remembered on this browser;
+if browser storage is blocked, the choice still works for the current page.
+The theme affects the screen only, not the generated PDFs.
 
 ---
 
@@ -59,7 +64,28 @@ form legitimately opens or closes in the month next door:
   its full span. A date outside the period is refused.
 - The hours panel states the span plainly: *This period: 4 FTW weeks (Aug 30–Sep 26)*.
 
-Holidays are **not** handled: a class that meets on Labor Day still prints its meeting.
+Recurring **UH observed holidays** are calculated each year: New Year's Day,
+MLK Day, Presidents' Day, Prince Kūhiō Day, Good Friday, Memorial Day,
+King Kamehameha I Day, Independence Day, Statehood Day, Labor Day, general
+Election Day (even years), Veterans Day, Thanksgiving, and Christmas.
+Fixed-date holidays falling on Saturday are observed Friday; Sunday holidays
+are observed Monday. A following year's New Year holiday may fall on December 31.
+These are the current recurring rules, projected through the supported year range;
+future changes to UH policy will require an update.
+
+Classes with **set times enabled** omit holiday attendance (including flexible
+blocks) and study. Classes with that switch **off** are async and retain holiday
+attendance and study. Each class's study minutes on both DHS 819 and DHS 817 equal
+its recorded attendance minutes in each FTW week after holidays and date clipping.
+Study uses the usual available slots first, then moves within that same week if
+needed. If the selected dates cannot fit matching study, generation stops with
+an explanatory error rather than silently dropping hours.
+
+Spring break, other non-instructional days, semester boundaries, emergency closures,
+and FTW employment holiday rules are **not** automatically excluded. Review the
+PDFs for your actual course dates. Sources checked September 27, 2026:
+[UH academic calendar](https://www.hawaii.edu/academic-calendar/) and
+[UH holiday policy](https://www.hawaii.edu/ohr/benefits-leave/benefit/holidays/).
 
 ---
 
@@ -69,13 +95,14 @@ The tool is a **weekly-timetable builder**: each class contributes weekly attend
 blocks, study blocks fill in around them, and the PDFs report the timetable.
 
 - Each class row carries a **Credits** number (1–4, default **3**). The common student
-  never touches it. Credits decide two things:
+  never touches it. Credits determine automatic async attendance and the optional
+  flexible-hour allowance:
   - how much class time an *online* class earns per week — 3 credits = 3.0 hrs, laid out
     as 1.5 + 1.5 on Mon & Wed exactly as before; 1 credit = a single 1.0-hr block;
     4 credits = 1.5 + 1.5 + 1;
-  - **how much study time the class earns — always its credits, whatever its attendance
-    turns out to be.** A 3-credit class that meets for only 1.5 literal hours still earns
-    3.0 study hrs/week.
+  - **Study matches attendance**, including selected flexible blocks and typed async
+    overrides. A 3-credit class meeting for 1.25 hours gets 1.25 study hours; with
+    1.75 flexible attendance hours added, it gets 3 study hours in a non-holiday week.
 - Each class row also asks: **"Does this class meet at set times?"** (off by default).
   - **Off** — the class is treated as online/asynchronous and auto-sequences from the day
     start time on Mon & Wed. You can still override an individual block's start/end, in
@@ -124,14 +151,15 @@ blocks, study blocks fill in around them, and the PDFs report the timetable.
   plainly to submit both. The continuation's first row carries its date even when one
   day's rows are split across the boundary.
 - Shows a live hours summary below the Classes section (class attendance, study time, and
-  total hrs/week for the checked forms) that reflects the real timetable totals — literal
-  meetings plus any remainders switched on for attendance, and the sum of credits for
-  study — and updates as classes, credits, meetings, switches, or form selections change.
+  total hrs/period for the checked forms) that reflects the actual dated rows after
+  holiday exclusions and date clipping. Study equals attendance; selecting both
+  study forms does not double-count the same study time in the summary.
   The panel is informational only — required hours vary by situation and should be
   confirmed with the FTW case manager or BTH Campus Contact. It also names the report
   period the forms will cover, as neutral context.
 
-Students with only online/asynchronous 3-credit classes see **no change at all** —
+Students with only online/asynchronous 3-credit classes using full report periods see
+the same default timetable —
 leaving Credits on 3 and every toggle off produces output identical to the previous
 version of the tool.
 
@@ -236,7 +264,9 @@ Then open <http://localhost:8000/> in your browser.
 6. If such a class meets for fewer hours than its credits, its row says so and offers
    **"Add the remaining hours as flexible blocks"**. Leave that off unless the class
    really has online hours, or the case worker credits the full hours.
-7. Check the hours summary — it shows exactly what the forms will document.
+7. Check the hours summary — it totals the selected dates after UH holiday adjustments.
+   Both study forms match attendance per class and FTW week. Review course-specific
+   breaks and closures yourself; those are not filtered automatically.
 8. Click **Generate & download selected forms**.
 9. Open each PDF in Adobe, review, sign (and have the monitor complete Section 1 of the
    817 if generated), and submit. If a period needed more rows than one form holds you
@@ -247,7 +277,8 @@ Then open <http://localhost:8000/> in your browser.
 ## Privacy
 
 Everything happens in the browser. No student data is uploaded, logged, or stored —
-there is no server and no use of browser storage. Refreshing the page clears all input.
+there is no application backend. Only the appearance preference uses browser storage.
+Refreshing the page clears all form input.
 
 ---
 
@@ -266,9 +297,16 @@ every value written into every generated PDF against the box it has to fit:
 ```bash
 npm install pdf-lib
 node _dev_test.js
+node _dev_holidays_test.js
+# Or run both suites:
+npm test
 ```
 
-It writes filled PDFs to `_dev_out/` for inspection. `_dev_golden.json` is a snapshot of
+The holiday suite checks published 2026/2027 dates and per-class weekly equality,
+holiday exclusions, async retention, overlaps, and a/p formatting across every
+month from 2020 to 2100, plus partial ranges and insufficient-space errors.
+
+The PDF suite writes filled PDFs to `_dev_out/` for inspection. `_dev_golden.json` is a snapshot of
 the original tool's output for all-async configs; the suite fails if the **weekly
 pattern** — which blocks, in what order, on which weekday, with which totals — ever
 departs from it. Only the span of dates and the time format are allowed to differ, which

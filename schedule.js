@@ -10,7 +10,7 @@
  * Loaded as window.BTHSchedule in the browser, module.exports under Node.
  *
  * The tool is a weekly-timetable builder. Every class carries a CREDITS number
- * (1-4, normally 3), and credits drive both halves of the week:
+ * (1-4, normally 3), used for automatic async attendance and flexible allowances:
  *  - SCHEDULED classes (meetings: [{day, startMin, endMin}]) claim their exact
  *    days and times. Immovable. They document their real meetings and nothing
  *    more, unless the student opts in to remainder blocks (addRemainder), in
@@ -19,7 +19,7 @@
  *  - ASYNC classes (no meetings) earn attendance equal to their credits, laid
  *    out as back-to-back blocks on the default attendance days (Mon & Wed) from
  *    the day start time, skipping any interval a scheduled class already claims.
- *  - STUDY is always the class's CREDITS, whatever attendance ended up being.
+ *  - STUDY matches the class's actual attendance, on both study forms.
  *    It is laid out in blocks (default 1.5 hr, the last one adjusted to hit the
  *    exact total) on the default study days (Tue & Thu), overflowing to Fri,
  *    Sat, Sun, Mon, Wed.
@@ -365,7 +365,7 @@
     var anyScheduled = classes.length !== asyncClasses.length;
 
     // Every class's credit hours, in minutes. This one number drives its online
-    // class time, the size of any remainder blocks, and all of its study time.
+    // class time and the size of any remainder blocks. Study follows attendance.
     var creditMins = classes.map(function (c) { return creditsOf(c) * 60; });
 
     // 1. Scheduled classes claim their exact days and times. Immovable.
@@ -376,7 +376,7 @@
       if (!isScheduled(c)) continue;
       for (j = 0; j < c.meetings.length; j++) {
         var m = c.meetings[j];
-        attendance[m.day].push({ code: c.code, startMin: m.startMin, endMin: m.endMin, scheduled: true });
+        attendance[m.day].push({ code: c.code, classIndex: i, startMin: m.startMin, endMin: m.endMin, scheduled: true });
         meetingMins[i] += m.endMin - m.startMin;
       }
     }
@@ -414,7 +414,7 @@
           "” — check the times, or turn that switch off." } };
       }
       attendance[pDay].push({
-        code: rc.code, startMin: pStart, endMin: pStart + owed,
+        code: rc.code, classIndex: i, startMin: pStart, endMin: pStart + owed,
         scheduled: true, remainder: true
       });
       remainderMins[i] = owed;
@@ -456,7 +456,7 @@
             ? a.startMin
             : nextFreeStart(cursors[oday], blockMinutes, claimedByDay[oday]);
           var oend = (a.endMin != null) ? a.endMin : ostart + blockMinutes;
-          var ob = { code: a.code, startMin: ostart, endMin: oend, scheduled: false };
+          var ob = { code: a.code, classIndex: i, startMin: ostart, endMin: oend, scheduled: false };
           attendance[oday].push(ob);
           asyncByDay[oday].push(ob);
           cursors[oday] = oend;
@@ -477,7 +477,7 @@
           var td = tryDays[t];
           var s = nextFreeStart(cursors[td], dur, claimedByDay[td]);
           if (s + dur <= DAY_END_MIN) {
-            var nb = { code: a.code, startMin: s, endMin: s + dur, scheduled: false };
+            var nb = { code: a.code, classIndex: i, startMin: s, endMin: s + dur, scheduled: false };
             attendance[td].push(nb);
             asyncByDay[td].push(nb);
             cursors[td] = s + dur;
@@ -519,11 +519,10 @@
     }
 
     /*
-     * 3. Study time. THE RULE: a class's weekly study is its CREDITS, always,
-     * whatever its attendance turned out to be. A 3-credit class that meets for
-     * only 1.5 literal hours still earns 3 hours of study.
+     * 3. Both study forms match each class's actual attendance minutes,
+     * including flexible blocks when selected and any async time overrides.
      */
-    var studyMins = creditMins.slice();
+    var studyMins = classMins.slice();
     var studyWeekMin = 0;
 
     /*
@@ -549,7 +548,7 @@
         var sday = STUDY_DAYS[d];
         for (i = 0; i < srcBlocks.length; i++) {
           var src = srcBlocks[i];
-          study[sday].push({ code: src.code, startMin: src.startMin, endMin: src.endMin });
+          study[sday].push({ code: src.code, classIndex: src.classIndex, startMin: src.startMin, endMin: src.endMin });
           studyWeekMin += Math.max(0, src.endMin - src.startMin);
         }
       }
@@ -571,7 +570,7 @@
             var std = sTryDays[t];
             var ss = nextFreeStart(scursors[std], sdur, attendance[std]);
             if (ss + sdur <= DAY_END_MIN) {
-              study[std].push({ code: classes[i].code, startMin: ss, endMin: ss + sdur });
+              study[std].push({ code: classes[i].code, classIndex: i, startMin: ss, endMin: ss + sdur });
               scursors[std] = ss + sdur;
               studyWeekMin += sdur;
               sPlaced = true;
@@ -774,6 +773,134 @@
     return out;
   }
 
+  // Recurring UH holidays, shared by all campuses. Observed dates follow the
+  // State calendar linked by UH OHR: Saturday -> Friday; Sunday -> Monday.
+  // Sources: hawaii.edu/academic-calendar/ and hawaii.edu/ohr/benefits-leave/benefit/holidays/
+  // Breaks, non-instructional days, and one-off closures are deliberately excluded.
+  var holidayCache = {};
+  function uhHolidays(year) {
+    if (holidayCache[year]) return holidayCache[year];
+    var dates = {};
+    function add(date, name) {
+      var key = dayNumber(date);
+      dates[key] = dates[key] ? dates[key] + " / " + name : name;
+    }
+    function fixed(y, month, day, name) {
+      var date = new Date(y, month, day);
+      if (date.getDay() === 6) date.setDate(date.getDate() - 1);
+      else if (date.getDay() === 0) date.setDate(date.getDate() + 1);
+      add(date, name);
+    }
+    function nth(month, weekday, n, name) {
+      var first = new Date(year, month, 1);
+      add(new Date(year, month, 1 + (weekday - first.getDay() + 7) % 7 + 7 * (n - 1)), name);
+    }
+    fixed(year, 0, 1, "New Year's Day");
+    // Next January's observed holiday can fall on this December 31.
+    fixed(year + 1, 0, 1, "New Year's Day");
+    nth(0, 1, 3, "Martin Luther King Jr. Day");
+    nth(1, 1, 3, "Presidents' Day");
+    fixed(year, 2, 26, "Prince Kuhio Day");
+    // Gregorian Easter (Meeus/Jones/Butcher), then subtract two days.
+    var a = year % 19, b = Math.floor(year / 100), c = year % 100;
+    var d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25);
+    var g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d - g + 15) % 30;
+    var i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7;
+    var m = Math.floor((a + 11 * h + 22 * l) / 451);
+    var em = Math.floor((h + l - 7 * m + 114) / 31);
+    var ed = (h + l - 7 * m + 114) % 31 + 1;
+    add(new Date(year, em - 1, ed - 2), "Good Friday");
+    var lastMay = new Date(year, 4, 31);
+    add(new Date(year, 4, 31 - (lastMay.getDay() + 6) % 7), "Memorial Day");
+    fixed(year, 5, 11, "King Kamehameha I Day");
+    fixed(year, 6, 4, "Independence Day");
+    nth(7, 5, 3, "Statehood Day");
+    nth(8, 1, 1, "Labor Day");
+    if (year % 2 === 0) {
+      var nov = new Date(year, 10, 1);
+      add(new Date(year, 10, 2 + (1 - nov.getDay() + 7) % 7), "General Election Day");
+    }
+    fixed(year, 10, 11, "Veterans Day");
+    nth(10, 4, 4, "Thanksgiving");
+    fixed(year, 11, 25, "Christmas");
+    holidayCache[year] = dates;
+    return dates;
+  }
+
+  function uhHoliday(date) {
+    return uhHolidays(date.getFullYear())[dayNumber(date)] || null;
+  }
+
+  // Reconcile dated study with dated attendance, in exact minutes, per class
+  // and Sun-Sat week. Keep the existing study slots wherever possible. Holiday
+  // or partial-week changes can shorten/move study within that same week only.
+  function datedRows(config, tmpl, period, from, until) {
+    var attendanceRows = [], studyRows = [];
+    var classes = config.classes || [];
+    var allDays = qualifyingDates(period, [0, 1, 2, 3, 4, 5, 6], from, until);
+    var weeks = {};
+    allDays.forEach(function (date) {
+      var key = dayNumber(weekStart(date));
+      if (!weeks[key]) weeks[key] = [];
+      weeks[key].push(date);
+    });
+    var failure = null;
+    Object.keys(weeks).sort(function (a, b) { return Number(a) - Number(b); }).forEach(function (key) {
+      if (failure) return;
+      var dates = weeks[key], att = [[], [], [], [], [], [], []];
+      var study = [[], [], [], [], [], [], []];
+      var remaining = classes.map(function () { return 0; });
+      var available = {};
+      dates.forEach(function (date) {
+        var day = date.getDay();
+        available[day] = date;
+        att[day] = tmpl.attendance[day].filter(function (block) {
+          return !isScheduled(classes[block.classIndex]) || !uhHoliday(date);
+        });
+        att[day].forEach(function (block) {
+          remaining[block.classIndex] += block.endMin - block.startMin;
+        });
+      });
+      function allowed(day, index) {
+        return available[day] && (!isScheduled(classes[index]) || !uhHoliday(available[day]));
+      }
+      dates.forEach(function (date) {
+        var day = date.getDay();
+        tmpl.study[day].forEach(function (block) {
+          var ix = block.classIndex;
+          if (!allowed(day, ix)) return;
+          var minutes = Math.min(remaining[ix], block.endMin - block.startMin);
+          if (minutes <= 0) return;
+          study[day].push({ code: block.code, startMin: block.startMin, endMin: block.startMin + minutes });
+          remaining[ix] -= minutes;
+        });
+      });
+      remaining.forEach(function (_, ix) {
+        STUDY_DAYS.concat(STUDY_OVERFLOW).forEach(function (day) {
+          if (!remaining[ix] || !allowed(day, ix)) return;
+          var occupied = att[day].concat(study[day]).slice().sort(function (a, b) { return a.startMin - b.startMin; });
+          occupied.push({ startMin: DAY_END_MIN, endMin: DAY_END_MIN });
+          var cursor = config.dayStartMin != null ? config.dayStartMin : 480;
+          occupied.forEach(function (block) {
+            while (remaining[ix] > 0 && cursor < block.startMin) {
+              var minutes = Math.min(remaining[ix], block.startMin - cursor, config.blockMinutes || 90);
+              study[day].push({ code: classes[ix].code, startMin: cursor, endMin: cursor + minutes });
+              remaining[ix] -= minutes;
+              cursor += minutes;
+            }
+            cursor = Math.max(cursor, block.endMin);
+          });
+        });
+        if (remaining[ix] > 0) failure = { message: "There isn't room in the selected dates for study hours matching “" +
+          classes[ix].code + "” attendance. Extend the date range or adjust the times." };
+      });
+      study.forEach(function (blocks) { blocks.sort(function (a, b) { return a.startMin - b.startMin; }); });
+      attendanceRows = attendanceRows.concat(buildRowsFromTemplate(dates, att));
+      studyRows = studyRows.concat(buildRowsFromTemplate(dates, study));
+    });
+    return { error: failure, attendanceRows: attendanceRows, studyRows: studyRows };
+  }
+
   /* ========================= THE ONE ENTRY POINT ============================
    * Hand this the filled-in form and it returns everything needed to build the
    * PDFs: the report period, the dated attendance rows, the dated study rows,
@@ -805,11 +932,10 @@
     var from = fromISODate(config.startDate);
     var until = fromISODate(config.endDate);
 
-    var attDates = qualifyingDates(period, activeWeekdays(tmpl.attendance), from, until);
-    var studyDates = qualifyingDates(period, activeWeekdays(tmpl.study), from, until);
-
-    var attendanceRows = buildRowsFromTemplate(attDates, tmpl.attendance);
-    var studyRows = buildRowsFromTemplate(studyDates, tmpl.study);
+    var dated = datedRows(config, tmpl, period, from, until);
+    if (dated.error) return { error: dated.error };
+    var attendanceRows = dated.attendanceRows;
+    var studyRows = dated.studyRows;
 
     return {
       error: null,
@@ -842,6 +968,7 @@
   for (var cOpt = MIN_CREDITS; cOpt <= MAX_CREDITS; cOpt++) CREDIT_OPTIONS.push(cOpt);
 
   return {
+    uhHoliday: uhHoliday,
     MONTHS: MONTHS,
     CREDIT_OPTIONS: CREDIT_OPTIONS,
     DEFAULT_CREDITS: DEFAULT_CREDITS,
