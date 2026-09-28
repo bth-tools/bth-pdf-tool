@@ -108,12 +108,15 @@ input:focus, select:focus { outline: 2px solid var(--brand); outline-offset: 0; 
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
 
-.day-start { display: flex; align-items: flex-end; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+.auto-scheduling { margin: 12px 0 16px; }
+.auto-scheduling summary { color: var(--brand); cursor: pointer; font-size: 0.85rem; width: fit-content; }
+.auto-scheduling summary:focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; }
+.day-start { display: flex; align-items: flex-end; gap: 12px; margin: 10px 0 14px; flex-wrap: wrap; }
 .day-start label { max-width: 160px; }
 
 .class-head, .class-row {
   display: grid;
-  grid-template-columns: 1fr 78px 90px 90px 36px;
+  grid-template-columns: minmax(0, 1fr) 78px 90px 90px 36px;
   gap: 8px;
   align-items: center;
 }
@@ -124,9 +127,10 @@ input:focus, select:focus { outline: 2px solid var(--brand); outline-offset: 0; 
 
 /* "Does this class meet at set times?" toggle + meetings editor */
 .meets-line { margin: 6px 2px 0; font-size: 0.85rem; color: var(--muted); }
-.class-item.scheduled .class-row { grid-template-columns: 1fr 78px 36px; }
-.class-item.scheduled .c-start,
-.class-item.scheduled .c-end { display: none; }
+.class-row > label, .meeting-row > label { min-width: 0; font-size: inherit; }
+.field-caption { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.class-item.scheduled .class-row > .field-start,
+.class-item.scheduled .class-row > .field-end { visibility: hidden; }
 .meetings {
   margin: 8px 0 2px 10px;
   padding: 10px 12px 4px;
@@ -314,22 +318,30 @@ button { font: inherit; cursor: pointer; }
     grid-template-areas: "code code code del" "credits start end del2";
     gap: 8px 8px;
   }
-  .class-row .c-code { grid-area: code; }
-  .class-row .c-credits { grid-area: credits; }
-  .class-row .c-start { grid-area: start; }
-  .class-row .c-end { grid-area: end; }
+  .field-caption { position: static; width: auto; height: auto; overflow: visible; clip-path: none; white-space: normal; font-size: 0.78rem; }
+  .class-row .field-code { grid-area: code; }
+  .class-row .field-credits { grid-area: credits; }
+  .class-row .field-start { grid-area: start; }
+  .class-row .field-end { grid-area: end; }
   .class-row .del { grid-area: del; height: 100%; }
-  .class-item.scheduled .class-row {
-    grid-template-columns: 1fr 78px 36px;
-    grid-template-areas: "code credits del";
-  }
+  .class-item.scheduled .class-row { grid-template-areas: "code code code del" "credits . . ."; }
+  .class-item.scheduled .class-row > .field-start,
+  .class-item.scheduled .class-row > .field-end { display: none; }
   .meeting-head { display: none; }
   .meeting-row {
     grid-template-columns: 1fr 1fr 36px;
     grid-template-areas: "day day del" "start end del2";
   }
-  .meeting-row .m-day { grid-area: day; }
-  .meeting-row .m-start { grid-area: start; }
-  .meeting-row .m-end { grid-area: end; }
+  .meeting-row .field-day { grid-area: day; }
+  .meeting-row .field-start { grid-area: start; }
+  .meeting-row .field-end { grid-area: end; }
   .meeting-row .del { grid-area: del; height: 100%; }
+}
+
+/* Give native time inputs enough room for their full clock and AM/PM controls. */
+@media (max-width: 420px) {
+  .class-row { grid-template-columns: minmax(0, 1fr) 36px; grid-template-areas: "code del" "credits ." "start start" "end end"; }
+  .class-item.scheduled .class-row { grid-template-areas: "code del" "credits ."; }
+  .class-row .field-credits { max-width: 78px; }
+  .meeting-row { grid-template-columns: minmax(0, 1fr) 36px; grid-template-areas: "day del" "start start" "end end"; }
 }

@@ -103,7 +103,7 @@ blocks, study blocks fill in around them, and the PDFs report the timetable.
   - **Study matches attendance**, including selected flexible blocks and typed async
     overrides. A 3-credit class meeting for 1.25 hours gets 1.25 study hours; with
     1.75 flexible attendance hours added, it gets 3 study hours in a non-holiday week.
-- Each class row also asks: **"Does this class meet at set times?"** (off by default).
+- Each class row also asks: **"Does this class meet in person or online at scheduled times?"** (off by default).
   - **Off** — the class is treated as online/asynchronous and auto-sequences from the day
     start time on Mon & Wed. You can still override an individual block's start/end, in
     which case those exact times are used on both days, as before.
@@ -115,12 +115,12 @@ blocks, study blocks fill in around them, and the PDFs report the timetable.
   a plain-language inline error instead of a broken PDF.
 - **Remainder blocks are opt-in.** When a scheduled class meets for fewer hours than it
   carries in credits, its row shows a quiet note — *"This class meets 1.5 of its 4 credit
-  hours."* — and one switch: **"Add the remaining hours as flexible blocks", off by
+  hours."* — and one switch: **"Include additional approved class hours", off by
   default. Leave it off and the class documents its real meetings only.** Turn it on and
   the difference is added as a flexible block mirrored onto the meeting day's partner
   (Mon↔Wed, Tue↔Thu; Fri/Sat/Sun mirror to Mon) at the same clock time, sliding later in
-  the day if that slot is taken. That serves hybrid classes with a real online component,
-  and students whose case worker credits the full hours. A class already meeting its
+  the day if that slot is taken. For online activities counted as class time,
+  such as recorded lectures. A class already meeting its
   credit hours or more shows no note and no switch.
 - **Every time carries a compact meridiem** — no leading zero, one lowercase letter, no
   space: `8:00a`, `11:40a`, `12:00p` (noon), `1:30p`, `10:35p`. The on-screen automatic
@@ -251,19 +251,20 @@ Then open <http://localhost:8000/> in your browser.
 
 1. Tick the form(s) you want: Class Attendance (816), Unsupervised Study (819), and/or
    Monitored Study (817). Any combination works.
-2. Enter the student name and institution (defaults to **UHMC**).
+2. Enter the student name and institution. **e.g. UHMC** is a placeholder, not a prefilled value.
 3. Pick the month and year (default to the current month/year). The dropdown shows the
    FTW report period each month covers, and the start/end dates start on that full
    period — narrow them only for part of a period.
-4. Set the day start time (default **8:00**) and list the classes in order. Times fill in
-   automatically; override a block only if needed. Leave **Credits** on 3 unless a class
+4. Add each class by course code and number, such as ENG 100. Automatic attendance
+   and study times start at **8:00 a.m.**; expand **Automatic scheduling** to adjust
+   that start time. Scheduled meetings keep their entered times. Leave **Credits** on 3 unless a class
    is worth a different number.
 5. For a class that meets at a set day and time (a Zoom class or an in-person class),
-   turn on **"Does this class meet at set times?"** and enter its day(s) and start/end
+   turn on **"Does this class meet in person or online at scheduled times?"** and enter its day(s) and start/end
    times. Online classes with no set meeting time: skip this — the tool handles them.
 6. If such a class meets for fewer hours than its credits, its row says so and offers
-   **"Add the remaining hours as flexible blocks"**. Leave that off unless the class
-   really has online hours, or the case worker credits the full hours.
+   **"Include additional approved class hours"**. For online activities counted as class time,
+   such as recorded lectures. The note shows how many hours this adds before holidays.
 7. Check the hours summary — it totals the selected dates after UH holiday adjustments.
    Both study forms match attendance per class and FTW week. Review course-specific
    breaks and closures yourself; those are not filtered automatically.

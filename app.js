@@ -191,9 +191,9 @@
       dayOpts += '<option value="' + i + '">' + d + "</option>";
     });
     row.innerHTML =
-      '<select class="m-day" aria-label="Day">' + dayOpts + "</select>" +
-      '<input class="m-start" type="time" aria-label="Starts" />' +
-      '<input class="m-end" type="time" aria-label="Ends" />' +
+      '<label class="field-day"><span class="field-caption">Day</span><select class="m-day">' + dayOpts + "</select></label>" +
+      '<label class="field-start"><span class="field-caption">Starts</span><input class="m-start" type="time" /></label>' +
+      '<label class="field-end"><span class="field-caption">Ends</span><input class="m-end" type="time" /></label>' +
       '<button class="del" type="button" title="Remove this day">×</button>';
     row.querySelector(".del").addEventListener("click", function () {
       row.remove();
@@ -212,14 +212,14 @@
     });
     item.innerHTML =
       '<div class="class-row">' +
-        '<input class="c-code" type="text" placeholder="e.g. ACC 201" autocomplete="off" />' +
-        '<select class="c-credits" aria-label="Credits">' + creditOpts + "</select>" +
-        '<input class="c-start" type="text" placeholder="auto" inputmode="numeric" />' +
-        '<input class="c-end" type="text" placeholder="auto" inputmode="numeric" />' +
+        '<label class="field-code"><span class="field-caption">Class code</span><input class="c-code" type="text" placeholder="e.g. ACC 201" autocomplete="off" /></label>' +
+        '<label class="field-credits"><span class="field-caption">Credits</span><select class="c-credits">' + creditOpts + "</select></label>" +
+        '<label class="field-start"><span class="field-caption">Start (auto)</span><input class="c-start" type="text" placeholder="auto" inputmode="numeric" /></label>' +
+        '<label class="field-end"><span class="field-caption">End (auto)</span><input class="c-end" type="text" placeholder="auto" inputmode="numeric" /></label>' +
         '<button class="del" type="button" title="Remove">×</button>' +
       "</div>" +
       '<label class="check meets-line">' +
-        '<input class="c-meets" type="checkbox" /> Does this class meet at set times?' +
+        '<input class="c-meets" type="checkbox" /> Does this class meet in person or online at scheduled times?' +
       "</label>" +
       '<div class="meetings" hidden>' +
         '<div class="meeting-head"><span>Day</span><span>Starts</span><span>Ends</span><span></span></div>' +
@@ -229,8 +229,9 @@
         '<div class="remainder" hidden>' +
           '<p class="remainder-note"></p>' +
           '<label class="check remainder-line">' +
-            '<input class="c-remainder" type="checkbox" /> Add the remaining hours as flexible blocks' +
+            '<input class="c-remainder" type="checkbox" /> Include additional approved class hours' +
           "</label>" +
+          '<p class="hint">For online activities counted as class time, such as recorded lectures.</p>' +
         "</div>" +
       "</div>";
     item.querySelector(".c-code").value = code || "";
@@ -394,7 +395,9 @@
     if (!offer) return;
     box.querySelector(".remainder-note").textContent =
       "This class meets " + Sched.formatTotal(info.meetingMin) + " of its " +
-      info.credits + (info.credits === 1 ? " credit hour." : " credit hours.");
+      info.credits + (info.credits === 1 ? " credit hour. " : " credit hours. ") +
+      "Adds " + Sched.formatTotal(info.shortfallMin) + " hours per week to reach " +
+      info.credits + " class hours (before holiday adjustments).";
   }
 
   /* ========================== THE HOURS SUMMARY =============================

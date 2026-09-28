@@ -16,7 +16,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png" />
   <script src="theme.js?v=7"></script>
-  <link rel="stylesheet" href="styles.css?v=7" />
+  <link rel="stylesheet" href="styles.css?v=9" />
 </head>
 <body>
   <main class="wrap">
@@ -51,7 +51,7 @@
           <input id="name" type="text" placeholder="First Last" autocomplete="off" />
         </label>
         <label>Educational institution
-          <input id="institution" type="text" value="UHMC" autocomplete="off" />
+          <input id="institution" type="text" placeholder="e.g. UHMC" autocomplete="off" />
         </label>
       </div>
     </section>
@@ -80,22 +80,24 @@
 
     <section class="card">
       <h2>Classes</h2>
-      <p class="hint">List your classes in the order you want them on the forms. The tool picks the
-        times for you. Does a class meet at a set day and time (like a Zoom class or an in-person
-        class)? Turn on “Does this class meet at set times?” and enter its days and times. Online
-        classes with no set meeting time: skip that — the tool handles them.</p>
+      <p class="hint">Add each class by course code and number, such as ENG 100.</p>
       <p class="hint">Leave <strong>Credits</strong> on 3 unless a class is worth a different number
-        — it sets automatic online attendance and the optional flexible-hour allowance.
+        — it sets automatic online attendance and the optional additional class hours.
         Study hours on both study forms match each class’s recorded attendance each FTW week.</p>
       <p class="hint">Recurring UH observed holidays are skipped for classes with set meeting times,
-        including their flexible blocks and study. Async classes (set-times switch off) keep
+        including their additional class hours and study. Async classes (scheduled-times switch off) keep
         holiday hours. Spring break and other non-instructional days are not removed automatically.</p>
-      <div class="day-start">
-        <label>Day start time
+      <details class="auto-scheduling">
+        <summary>Automatic scheduling</summary>
+        <p class="hint">Automatic attendance and study times start at 8:00 a.m. by default.
+          Adjust the start time to fit your schedule. Scheduled class meetings keep their entered times.</p>
+        <div class="day-start">
+        <label>Start automatic times at
           <input id="dayStart" type="text" value="8:00" inputmode="numeric" placeholder="8:00" />
         </label>
         <span class="hint inline">24-hour or plain clock, e.g. <code>8:00</code> or <code>13:30</code></span>
       </div>
+      </details>
 
       <div class="class-head">
         <span>Class code</span>
@@ -169,16 +171,16 @@
           start on the full period — change them only for part of a period.</li>
         <li><strong>Add your classes</strong> — type each class code in order; the times fill in
           for you. Leave <strong>Credits</strong> on 3 unless a class is worth a different number.</li>
-        <li><strong>Set class times if needed</strong> — Does your class meet at a set day and time
-          (like a Zoom class or an in-person class)? Turn on “meets at set times” and enter its
-          days and times. Online classes with no set meeting time: skip this — the tool handles
-          them.</li>
+        <li><strong>Set class times if needed</strong> — turn on “Does this class meet in person or
+          online at scheduled times?” and enter its days and times. Leave it off for async classes.
+          Expand <strong>Automatic scheduling</strong> to change the default 8:00 a.m. start
+          for automatic attendance and study times.</li>
         <li><strong>If a class meets for fewer hours than its credits</strong>, its row says so and
-          offers to add the rest as flexible blocks. Leave that off unless your class really has
-          online hours, or your case worker credits you the full hours.</li>
+          choose <strong>Include additional approved class hours</strong> when applicable.
+          For online activities counted as class time, such as recorded lectures.</li>
         <li><strong>Check the hours summary</strong> — it shows exactly what the forms will
           document for the selected dates before you generate them. Both study forms match
-          recorded attendance per class and FTW week, including any flexible hours selected.
+          recorded attendance per class and FTW week, including any additional class hours selected.
           UH observed holidays are skipped for set-time classes; their study hours are reduced
           or moved within the same week to match. Async classes keep holiday hours.
           Spring break, other non-instructional days, and one-off closures are not filtered.</li>
@@ -193,6 +195,6 @@
   <script src="lib/pdf-lib.min.js"></script>
   <script src="schedule.js?v=8"></script>
   <script src="pdffill.js?v=8"></script>
-  <script src="app.js?v=8"></script>
+  <script src="app.js?v=9"></script>
 </body>
 </html>
