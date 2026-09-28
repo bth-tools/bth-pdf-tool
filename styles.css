@@ -64,6 +64,7 @@ body {
 
 .app-head { text-align: center; margin: 12px 0 20px; }
 .app-head h1 { margin: 0; font-size: 1.7rem; color: var(--brand-dark); letter-spacing: -0.01em; }
+.app-version { margin: 3px 0 0; color: var(--muted); font-size: 0.75rem; }
 .sub { margin: 6px 0 0; color: var(--ink); }
 .muted { color: var(--muted); font-size: 0.9rem; }
 

@@ -1,5 +1,10 @@
 # Bridge to Hope — DHS Hours Auto-Filler
 
+Current release: **v5.1** (`5.1.0` in package metadata). The version appears beneath
+the app title. Major scheduling or workflow changes advance the first number;
+smaller improvements and fixes advance the second. Update this release label,
+the label in `index.html`, and `package.json` together for future releases.
+
 A single static web page that auto-fills the First-To-Work (TANF) report-period forms
 for student-parents in the **Bridge to Hope** program:
 
