@@ -43,7 +43,7 @@ function verify(cfg) {
     for (const r of rows) {
       assert.match(r.start, /^\d{1,2}:\d{2}[ap]$/);
       assert.match(r.end, /^\d{1,2}:\d{2}[ap]$/);
-      if (scheduled.has(r.code)) assert.equal(S.uhHoliday(r.dateObj), null);
+      if (rows === result.attendanceRows && scheduled.has(r.code)) assert.equal(S.uhHoliday(r.dateObj), null);
       const key = r.dateObj.toDateString();
       assert.equal(r.isFirstOfDay, key !== previous);
       assert.equal(Boolean(r.date), key !== previous);
@@ -77,10 +77,12 @@ verify({year:2026,month:8,startDate:'2026-09-09',endDate:'2026-09-10',classes:mi
 verify({year:2026,month:8,classes:[{code:'OVERRIDE',credits:3,startMin:480,endMin:540}]});
 const impossible = S.compute({year:2026,month:8,startDate:'2026-09-14',endDate:'2026-09-14',
   classes:[{code:'LONG',credits:3,meetings:[{day:1,startMin:480,endMin:1440}]}]});
-assert.match(impossible.error.message, /isn't room/);
+assert.equal(impossible.error, null);
+assert.equal(impossible.shortfalls[0].minutes, 960);
+assert.equal(impossible.attendanceRows.length, 1);
 // Duplicate course codes must not merge allowances: each row keeps an internal identity.
 verify({year:2026,month:8,classes:[{...scheduled,code:'SAME'}, {code:'SAME',credits:1,meetings:[{day:3,startMin:900,endMin:930}]}]});
 for (let year=2020; year<=2100; year++) {
   for (let month=0; month<12; month++) verify({year,month,classes:mixed});
 }
-console.log('PASS: published calendars, 972 monthly schedules, holiday/async rules, exact weekly parity, clipping, no-room error, overlap checks, date labels, and a/p formatting.');
+console.log('PASS: published calendars, 972 monthly schedules, holiday/async rules, exact weekly parity, clipping, no-room partial output, overlap checks, date labels, and a/p formatting.');

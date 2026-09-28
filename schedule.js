@@ -126,6 +126,7 @@
       if (mer === "a" && h === 12) h = 0;
       else if (mer === "p" && h !== 12) h += 12;
     }
+    if (h > 24 || (h === 24 && mm !== 0)) return null;
     return h * 60 + mm;
   }
 
@@ -248,7 +249,7 @@
   }
 
   function isScheduled(c) {
-    return !!(c.meetings && c.meetings.length);
+    return !!(c.meetsSetTimes || (c.meetings && c.meetings.length));
   }
 
   /*
@@ -350,7 +351,7 @@
    *   classWeekMin, studyWeekMin
    * }
    */
-  function buildWeekTemplate(config) {
+  function legacyWeekTemplate(config) {
     var blockMinutes = config.blockMinutes || 90;
     var dayStartMin = (config.dayStartMin != null) ? config.dayStartMin : 8 * 60;
     var classes = config.classes || [];
@@ -665,7 +666,8 @@
   /* ================ TURNING ONE WEEK INTO ONE REPORT PERIOD =================
    * Everything above plans a single typical week. The rest of the file repeats
    * that week across the chosen month's FTW REPORT PERIOD to produce the
-   * actual dated rows the forms are filled with.
+   * actual dated rows the forms are filled with. The dated planner reapplies
+   * availability and holiday rules separately for each FTW week.
    */
 
   /*
@@ -715,6 +717,7 @@
           dateFull: formatDateWithDay(date),
           date: j === 0 ? formatDateWithDay(date) : "",
           code: b.code,
+          classIndex: b.classIndex,
           start: formatTime(b.startMin),
           end: formatTime(b.endMin),
           total: formatTotal(mins),
@@ -831,74 +834,161 @@
     return uhHolidays(date.getFullYear())[dayNumber(date)] || null;
   }
 
-  // Reconcile dated study with dated attendance, in exact minutes, per class
-  // and Sun-Sat week. Keep the existing study slots wherever possible. Holiday
-  // or partial-week changes can shorten/move study within that same week only.
-  function datedRows(config, tmpl, period, from, until) {
-    var attendanceRows = [], studyRows = [];
-    var classes = config.classes || [];
-    var allDays = qualifyingDates(period, [0, 1, 2, 3, 4, 5, 6], from, until);
-    var weeks = {};
-    allDays.forEach(function (date) {
-      var key = dayNumber(weekStart(date));
-      if (!weeks[key]) weeks[key] = [];
-      weeks[key].push(date);
+  // Plan within one FTW week. Existing templates supply preferred positions;
+  // unavailable intervals are hard boundaries for all movable activities.
+  function planWeek(config, seed, dates) {
+    var classes = config.classes || [], warnings = [], shortfalls = [];
+    var att = [[], [], [], [], [], [], []], study = [[], [], [], [], [], [], []];
+    var blocked = [[], [], [], [], [], [], []], available = {};
+    var dayStart = config.dayStartMin == null ? 480 : Math.max(0, Math.min(1439, config.dayStartMin));
+    if (dates) dates.forEach(function (date) { available[date.getDay()] = date; });
+    else for (var d = 0; d < 7; d++) available[d] = true;
+    function valid(b) {
+      return Number.isInteger(b.day) && b.day >= 0 && b.day < 7 &&
+        Number.isFinite(b.startMin) && Number.isFinite(b.endMin) &&
+        b.startMin >= 0 && b.endMin <= 1440 && b.endMin > b.startMin;
+    }
+    (config.unavailable || []).forEach(function (b) {
+      if (valid(b)) blocked[b.day].push(b);
+      else warnings.push("An unavailable time is incomplete or invalid and was not applied.");
     });
-    var failure = null;
-    Object.keys(weeks).sort(function (a, b) { return Number(a) - Number(b); }).forEach(function (key) {
-      if (failure) return;
-      var dates = weeks[key], att = [[], [], [], [], [], [], []];
-      var study = [[], [], [], [], [], [], []];
-      var remaining = classes.map(function () { return 0; });
-      var available = {};
-      dates.forEach(function (date) {
-        var day = date.getDay();
-        available[day] = date;
-        att[day] = tmpl.attendance[day].filter(function (block) {
-          return !isScheduled(classes[block.classIndex]) || !uhHoliday(date);
-        });
-        att[day].forEach(function (block) {
-          remaining[block.classIndex] += block.endMin - block.startMin;
+    function allowed(day, ix, kind) {
+      return available[day] && (kind === "study" || !isScheduled(classes[ix]) ||
+        available[day] === true || !uhHoliday(available[day]));
+    }
+    function claims(day) { return blocked[day].concat(att[day], study[day]); }
+    function add(day, start, duration, ix, kind, extra) {
+      var block = Object.assign({code: classes[ix].code, classIndex: ix,
+        startMin: start, endMin: start + duration}, extra || {});
+      (kind === "study" ? study : att)[day].push(block);
+    }
+    function overlap(a, b) { return a.startMin < b.endMin && b.startMin < a.endMin; }
+    // Keep explicit fixed meetings; flag conflicts without refusing the forms.
+    classes.forEach(function (c, ix) {
+      if (!isScheduled(c)) return;
+      if (!(c.meetings || []).length || c.incompleteMeetings) warnings.push(c.code + ": incomplete meeting times were omitted; enter a day, start and end to record them.");
+      (c.meetings || []).forEach(function (m) {
+        if (!valid(m)) { warnings.push(c.code + ": an invalid meeting was omitted."); return; }
+        if (!allowed(m.day, ix, "attendance")) return;
+        if (claims(m.day).some(function (b) { return overlap(m, b); }))
+          warnings.push(c.code + ": a fixed meeting on " + DAY_NAMES[m.day] + " overlaps another class or unavailable time. Check the entered times.");
+        add(m.day, m.startMin, m.endMin - m.startMin, ix, "attendance", {scheduled:true});
+      });
+    });
+    // Try an intact preferred block first, then split into all usable gaps.
+    function place(ix, kind, minutes, preferences) {
+      var remaining = minutes;
+      preferences.forEach(function (pref) {
+        if (!remaining || !allowed(pref.day, ix, kind)) return;
+        var duration = Math.min(remaining, pref.minutes == null ? remaining : pref.minutes);
+        var start = nextFreeStart(pref.startMin, duration, claims(pref.day));
+        if (duration > 0 && start + duration <= 1440) {
+          add(pref.day, start, duration, ix, kind); remaining -= duration;
+        }
+      });
+      var order = kind === "study" ? STUDY_DAYS.concat(STUDY_OVERFLOW) : ATTEND_DAYS.concat(ATTEND_OVERFLOW);
+      // Gaps on preferred days are considered first when a whole block cannot fit.
+      var attempts = preferences.concat(order.map(function (day) { return {day:day,startMin:dayStart}; }));
+      attempts.forEach(function (pref) {
+        if (!remaining || !allowed(pref.day, ix, kind)) return;
+        var occupied = claims(pref.day).slice().sort(function (a,b) { return a.startMin-b.startMin; });
+        occupied.push({startMin:1440,endMin:1440});
+        var cursor = pref.startMin;
+        occupied.forEach(function (b) {
+          var duration = Math.min(remaining, Math.max(0,b.startMin-cursor));
+          if (duration > 0) { add(pref.day,cursor,duration,ix,kind); remaining-=duration; }
+          cursor=Math.max(cursor,b.endMin);
         });
       });
-      function allowed(day, index) {
-        return available[day] && (!isScheduled(classes[index]) || !uhHoliday(available[day]));
-      }
-      dates.forEach(function (date) {
-        var day = date.getDay();
-        tmpl.study[day].forEach(function (block) {
-          var ix = block.classIndex;
-          if (!allowed(day, ix)) return;
-          var minutes = Math.min(remaining[ix], block.endMin - block.startMin);
-          if (minutes <= 0) return;
-          study[day].push({ code: block.code, startMin: block.startMin, endMin: block.startMin + minutes });
-          remaining[ix] -= minutes;
-        });
-      });
-      remaining.forEach(function (_, ix) {
-        STUDY_DAYS.concat(STUDY_OVERFLOW).forEach(function (day) {
-          if (!remaining[ix] || !allowed(day, ix)) return;
-          var occupied = att[day].concat(study[day]).slice().sort(function (a, b) { return a.startMin - b.startMin; });
-          occupied.push({ startMin: DAY_END_MIN, endMin: DAY_END_MIN });
-          var cursor = config.dayStartMin != null ? config.dayStartMin : 480;
-          occupied.forEach(function (block) {
-            while (remaining[ix] > 0 && cursor < block.startMin) {
-              var minutes = Math.min(remaining[ix], block.startMin - cursor, config.blockMinutes || 90);
-              study[day].push({ code: classes[ix].code, startMin: cursor, endMin: cursor + minutes });
-              remaining[ix] -= minutes;
-              cursor += minutes;
-            }
-            cursor = Math.max(cursor, block.endMin);
+      if (remaining) shortfalls.push({code:classes[ix].code,kind:kind,minutes:remaining});
+    }
+    classes.forEach(function (c, ix) {
+      var prefs = [];
+      if (seed && !seed.error) {
+        seed.attendance.forEach(function (blocks, day) {
+          blocks.forEach(function (b) {
+            if (b.classIndex === ix && (!b.scheduled || b.remainder) && allowed(day,ix,"attendance"))
+              prefs.push({day:day,startMin:b.startMin,minutes:b.endMin-b.startMin});
           });
         });
-        if (remaining[ix] > 0) failure = { message: "There isn't room in the selected dates for study hours matching “" +
-          classes[ix].code + "” attendance. Extend the date range or adjust the times." };
-      });
-      study.forEach(function (blocks) { blocks.sort(function (a, b) { return a.startMin - b.startMin; }); });
-      attendanceRows = attendanceRows.concat(buildRowsFromTemplate(dates, att));
-      studyRows = studyRows.concat(buildRowsFromTemplate(dates, study));
+      } else if (isScheduled(c)) {
+        var meetings=(c.meetings || []).filter(valid);
+        var owed=Math.max(0,creditsOf(c)*60-meetings.reduce(function (n,m) { return n+m.endMin-m.startMin; },0));
+        if (c.addRemainder && meetings.length) {
+          var day=PARTNER_DAY[meetings[0].day];
+          if (allowed(day,ix,"attendance")) prefs.push({day:day,startMin:meetings[0].startMin,minutes:owed});
+        }
+      } else {
+        var chunks=splitIntoBlocks(creditsOf(c)*60,config.blockMinutes || 90);
+        if (c.startMin != null || c.endMin != null) {
+          var start=c.startMin == null ? dayStart : c.startMin;
+          var end=c.endMin == null ? start+(config.blockMinutes || 90) : c.endMin;
+          if (start>=0 && end<=1440 && end>start) chunks=[end-start,end-start];
+          else { chunks=[]; warnings.push(c.code+": invalid attendance times were omitted."); }
+        }
+        chunks.forEach(function (minutes,j) { var day=ATTEND_DAYS[j%2];
+          if (allowed(day,ix,"attendance")) prefs.push({day:day,startMin:c.startMin == null ? dayStart : c.startMin,minutes:minutes}); });
+      }
+      place(ix,"attendance",prefs.reduce(function(n,p){return n+p.minutes;},0),prefs);
     });
-    return { error: failure, attendanceRows: attendanceRows, studyRows: studyRows };
+    var attendanceMins=classes.map(function(_,ix) { return att.reduce(function(n,blocks) {
+      return n+blocks.reduce(function(m,b){return m+(b.classIndex===ix?b.endMin-b.startMin:0);},0); },0); });
+    // Explicit study preferences take priority over automatic study placements.
+    var order=classes.map(function(_,ix){return ix;}).sort(function(a,b){return Number(!!classes[b].customStudy)-Number(!!classes[a].customStudy);});
+    order.forEach(function(ix) {
+      var c=classes[ix], minutes=attendanceMins[ix], prefs=[];
+      if (c.customStudy) {
+        var slots=(c.studySlots || []).filter(function(p){return Number.isInteger(p.day)&&p.day>=0&&p.day<7&&Number.isFinite(p.startMin)&&p.startMin>=0&&p.startMin<1440;});
+        if (slots.length !== (c.studySlots || []).length) warnings.push(c.code+": an incomplete study preference was not applied.");
+        var left=minutes;
+        slots.forEach(function(p,j) {
+          var duration=p.minutes>0 ? Math.min(left,p.minutes) : Math.ceil(left/(slots.length-j));
+          prefs.push({day:p.day,startMin:p.startMin,minutes:duration});left-=duration;
+        });
+        if (!slots.length) warnings.push(c.code+": no complete study time was entered; study was scheduled automatically.");
+      } else if (seed && !seed.error) {
+        seed.study.forEach(function(blocks,day){blocks.forEach(function(b){
+          if(b.classIndex===ix) prefs.push({day:day,startMin:b.startMin,minutes:b.endMin-b.startMin});
+        });});
+      }
+      place(ix,"study",minutes,prefs);
+    });
+    [att,study].forEach(function(days){days.forEach(function(blocks){blocks.sort(function(a,b){return a.startMin-b.startMin;});});});
+    return {attendance:att,study:study,warnings:warnings,shortfalls:shortfalls};
+  }
+
+  function buildWeekTemplate(config) {
+    var seed=legacyWeekTemplate(config);
+    // Preserve established automatic defaults, including display placeholders.
+    if (!seed.error && !(config.unavailable || []).length && !(config.classes || []).some(function(c){return c.customStudy;})) return seed;
+    var plan=planWeek(config,seed,null), classes=config.classes || [];
+    function minutes(days,ix) {return days.reduce(function(n,blocks){return n+blocks.reduce(function(m,b){return m+(b.classIndex===ix?b.endMin-b.startMin:0);},0);},0);}
+    var info=classes.map(function(c,ix){
+      var meeting=(c.meetings || []).reduce(function(n,m){return n+Math.max(0,m.endMin-m.startMin);},0);
+      var attended=minutes(plan.attendance,ix);
+      return {code:c.code,credits:creditsOf(c),creditMin:creditsOf(c)*60,scheduled:isScheduled(c),meetingMin:meeting,
+        remainderMin:Math.max(0,attended-meeting),shortfallMin:isScheduled(c)?Math.max(0,creditsOf(c)*60-meeting):0,
+        attendanceMin:attended,studyMin:minutes(plan.study,ix)};
+    });
+    return Object.assign(plan,{error:null,classInfo:info,
+      asyncPlaceholders:classes.map(function(c,ix){if(isScheduled(c))return null;
+        for(var d=0;d<7;d++){var b=plan.attendance[d].find(function(b){return b.classIndex===ix;});if(b)return {startMin:b.startMin,endMin:b.endMin};}return null;}),
+      classWeekMin:info.reduce(function(n,c){return n+c.attendanceMin;},0),studyWeekMin:info.reduce(function(n,c){return n+c.studyMin;},0)});
+  }
+
+  function datedRows(config, tmpl, period, from, until) {
+    var attendanceRows=[],studyRows=[],warnings=[],shortfalls=[];
+    var dates=qualifyingDates(period,[0,1,2,3,4,5,6],from,until),weeks={};
+    dates.forEach(function(date){var key=dayNumber(weekStart(date));(weeks[key] || (weeks[key]=[])).push(date);});
+    var seed=legacyWeekTemplate(config);
+    Object.keys(weeks).sort(function(a,b){return Number(a)-Number(b);}).forEach(function(key){
+      var weekDates=weeks[key],plan=planWeek(config,seed,weekDates);
+      attendanceRows=attendanceRows.concat(buildRowsFromTemplate(weekDates,plan.attendance));
+      studyRows=studyRows.concat(buildRowsFromTemplate(weekDates,plan.study));
+      plan.warnings.forEach(function(w){if(warnings.indexOf(w)<0)warnings.push(w);});
+      plan.shortfalls.forEach(function(s){shortfalls.push(Object.assign({week:formatDate(weekStart(weekDates[0]))},s));});
+    });
+    return {error:null,attendanceRows:attendanceRows,studyRows:studyRows,warnings:warnings,shortfalls:shortfalls};
   }
 
   /* ========================= THE ONE ENTRY POINT ============================
@@ -940,6 +1030,8 @@
     return {
       error: null,
       template: tmpl,
+      warnings: dated.warnings,
+      shortfalls: dated.shortfalls,
       period: period,
       attendanceRows: attendanceRows,
       studyRows: studyRows,

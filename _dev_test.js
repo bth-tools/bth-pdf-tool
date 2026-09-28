@@ -295,11 +295,8 @@ async function main() {
     ],
     dayStartMin: 480, blockMinutes: 90, month: 7, year: 2026, startDate: null, endDate: null
   });
-  check("test3: returns error, no rows", !!res3.error && !res3.attendanceRows);
-  check("test3: plain-language message",
-    !!res3.error && /overlap on Tuesday — check the times/.test(res3.error.message),
-    res3.error && res3.error.message);
-  console.log("  message:", res3.error && res3.error.message);
+  check("test3: retains entered meetings and generates rows", !res3.error && res3.attendanceRows.length > 0);
+  check("test3: reports fixed conflict", res3.warnings.some(w => /overlaps another class/.test(w)));
 
   /* ================= TEST 4 — odd hours (evening class) ================= */
   console.log("\nTEST 4 — Mon 5:00 PM–9:00 PM");
@@ -742,9 +739,9 @@ async function main() {
 
   /* ---- T6: width safety across every generated page ---- */
   console.log("\nT6 — every value written into every PDF fits its column");
-  const generated = fs.readdirSync(OUT).filter(f => f.endsWith(".pdf")).map(f => ({
+  const generated = fs.readdirSync(OUT).filter(f => /_(816|817|819)(_continued\d*|_\d+)?\.pdf$/.test(f)).map(f => ({
     file: path.join(OUT, f),
-    formKey: /_(816|817|819)(_continued\d*)?\.pdf$/.exec(f)[1]
+    formKey: /_(816|817|819)(_continued\d*|_\d+)?\.pdf$/.exec(f)[1]
   }));
   console.log("  checking " + generated.length + " generated PDFs");
   await checkFits("T6", generated);

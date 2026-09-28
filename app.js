@@ -203,6 +203,35 @@
     return row;
   }
 
+  function addUnavailableRow() {
+    var row=document.createElement("div");row.className="unavailable-row";
+    row.innerHTML='<fieldset><legend>Unavailable days</legend>'+DAY_OPTIONS.map(function(day,i){
+      return '<label class="check"><input type="checkbox" value="'+i+'" />'+day+'</label>';
+    }).join("")+'</fieldset><div class="time-options"><label>Starts<input class="u-start" type="text" placeholder="4:00p" /></label>'+
+      '<label>Ends<input class="u-end" type="text" placeholder="6:00p" /></label><button type="button" class="ghost remove-time">Remove</button></div>';
+    row.querySelector(".remove-time").addEventListener("click",function(){row.remove();refreshPlaceholders();});
+    row.addEventListener("input",refreshPlaceholders);row.addEventListener("change",refreshPlaceholders);
+    $("unavailableList").appendChild(row);
+  }
+  function readUnavailable() {
+    var out=[];
+    $("unavailableList").querySelectorAll(".unavailable-row").forEach(function(row){
+      var days=row.querySelectorAll('input[type="checkbox"]:checked');
+      var start=Sched.parseTime(row.querySelector(".u-start").value),end=Sched.parseTime(row.querySelector(".u-end").value);
+      if(!days.length)out.push({day:null,startMin:start,endMin:end});
+      days.forEach(function(day){out.push({day:Number(day.value),startMin:start,endMin:end});});
+    });return out;
+  }
+  function addStudySlot(item) {
+    var row=document.createElement("div");row.className="study-slot time-options";
+    row.innerHTML='<label>Study day<select class="s-day"><option value="">Day</option>'+DAY_OPTIONS.map(function(d,i){return '<option value="'+i+'">'+d+'</option>';}).join("")+'</select></label>'+
+      '<label>Starts<input class="s-start" type="text" placeholder="7:00p" /></label>'+
+      '<label>Hours <span class="opt">(optional)</span><input class="s-hours" type="number" min="0.0167" step="any" placeholder="Auto split" /></label>'+
+      '<button type="button" class="ghost remove-time">Remove</button>';
+    row.querySelector(".remove-time").addEventListener("click",function(){row.remove();refreshPlaceholders();});
+    item.querySelector(".study-slots").appendChild(row);
+  }
+
   function addClassRow(code) {
     var item = document.createElement("div");
     item.className = "class-item";
@@ -234,6 +263,17 @@
           '<p class="hint">For online activities counted as class time, such as recorded lectures.</p>' +
         "</div>" +
       "</div>";
+    item.insertAdjacentHTML("beforeend", '<label class="check meets-line"><input class="c-custom-study" type="checkbox" /> Choose study times</label>'+
+      '<div class="custom-study" hidden><p class="hint">Choose a day and start time; the end is calculated. Add another slot to split the hours. '+
+      'If a preferred time cannot fit, study moves to another available opening in the same week.</p><div class="study-slots"></div>'+
+      '<button type="button" class="ghost small add-study">+ Split across another time</button></div>'+
+      '<details class="study-preview"><summary>Scheduled study times</summary><div class="study-preview-content hint"></div></details>');
+    item.querySelector(".c-custom-study").addEventListener("change",function(){
+      item.querySelector(".custom-study").hidden=!this.checked;
+      if(this.checked&&!item.querySelector(".study-slot"))addStudySlot(item);
+      refreshPlaceholders();
+    });
+    item.querySelector(".add-study").addEventListener("click",function(){addStudySlot(item);refreshPlaceholders();});
     item.querySelector(".c-code").value = code || "";
     item.querySelector(".c-credits").value = String(Sched.DEFAULT_CREDITS);
     item.querySelector(".class-row .del").addEventListener("click", function () {
@@ -315,6 +355,13 @@
           endMin: endMin != null ? endMin : null
         });
       }
+      var cl=out[out.length-1];
+      cl.customStudy=item.querySelector(".c-custom-study").checked;
+      cl.studySlots=Array.prototype.map.call(item.querySelectorAll(".study-slot"),function(row){
+        var day=row.querySelector(".s-day").value;
+        var hours=Number(row.querySelector(".s-hours").value);
+        return {day:day===""?null:Number(day),startMin:Sched.parseTime(row.querySelector(".s-start").value),minutes:hours>0?Math.round(hours*60):null};
+      });
     });
     return out;
   }
@@ -326,6 +373,7 @@
       name: el.name.value.trim(),
       institution: el.institution.value.trim(),
       classes: readClasses(),
+      unavailable: readUnavailable(),
       dayStartMin: dayStartMin,
       blockMinutes: BLOCK_MINUTES,
       month: parseInt(el.month.value, 10),
@@ -338,8 +386,8 @@
   /* ========================= KEEPING THE PAGE FRESH =========================
    * Runs after every change anywhere in the class list. It asks schedule.js
    * for the current timetable and writes the resulting times back into each
-   * class row, so the screen always agrees with what the PDFs will say. If two
-   * set-time classes clash it shows the message under the list instead.
+   * class row. The hours and expanded study preview use the actual dated rows;
+   * conflicts and unplaced hours appear as notices without blocking downloads.
    */
 
   function showClassError(message) {
@@ -372,7 +420,9 @@
       var idx = ci++;
       showRemainderOffer(item, tmpl.classInfo[idx]);
       var ph = tmpl.asyncPlaceholders[idx];
-      if (!ph) return; // scheduled class: its times come from the meetings
+      item.querySelector(".c-start").placeholder="auto";
+      item.querySelector(".c-end").placeholder="auto";
+      if (!ph) return; // scheduled class or no available attendance slot
       item.querySelector(".c-start").placeholder = Sched.formatTime(ph.startMin);
       item.querySelector(".c-end").placeholder = Sched.formatTime(ph.endMin);
     });
@@ -411,6 +461,23 @@
     if (tmpl === undefined) tmpl = Sched.buildWeekTemplate(cfg);
     var dated = tmpl && !tmpl.error ? Sched.compute(cfg) : null;
     var broken = !dated || dated.error;
+    var notices=dated&&!dated.error ? (dated.warnings || []).slice() : [];
+    if(dated&&!dated.error)(dated.shortfalls || []).forEach(function(s){
+      notices.push("Week of "+s.week+": "+s.code+" — "+Sched.formatTotal(s.minutes)+" "+s.kind+" hours could not fit. These hours are not on the forms.");
+    });
+    $("scheduleNotices").replaceChildren();
+    notices.forEach(function(message){var p=document.createElement("p");p.textContent=message;$("scheduleNotices").appendChild(p);});
+    $("scheduleNotices").hidden=!notices.length;
+    var previewIndex=0;
+    Array.prototype.forEach.call(el.classList.querySelectorAll(".class-item"),function(item){
+      var code=item.querySelector(".c-code").value.trim();
+      var host=item.querySelector(".study-preview-content");host.replaceChildren();
+      if(!code||broken)return;
+      var ix=previewIndex++;
+      var rows=dated.studyRows.filter(function(r){return r.classIndex===ix;});
+      if(!rows.length){host.textContent="No study time is scheduled for these dates.";return;}
+      rows.forEach(function(r){var line=document.createElement("div");line.textContent=r.dateFull+": "+r.start+"–"+r.end+" ("+r.total+" hrs)";host.appendChild(line);});
+    });
     var classMin = broken ? 0 : dated.attendanceRows.reduce(function (sum, row) { return sum + row.hours * 60; }, 0);
     var studyMin = broken ? 0 : dated.studyRows.reduce(function (sum, row) { return sum + row.hours * 60; }, 0);
 
@@ -504,7 +571,7 @@
 
   /* ============================ MAKING THE PDFS =============================
    * Checks the entries first and refuses with a plain message if something is
-   * missing or two set-time classes clash. Then it works out the timetable
+   * required identifying information is missing. Then it works out the timetable
    * once and fills every ticked form from it. Downloads are spaced slightly
    * apart because browsers drop files that arrive all at once.
    */
@@ -520,18 +587,6 @@
     if (!cfg.name) { setStatus("Enter the student name first.", "err"); return; }
     if (isNaN(cfg.month) || isNaN(cfg.year)) { setStatus("Pick a month and year.", "err"); return; }
     if (!checkDates()) { setStatus(el.dateError.textContent, "err"); return; }
-    for (var ci = 0; ci < cfg.classes.length; ci++) {
-      var cc = cfg.classes[ci];
-      if (cc.meetsSetTimes && !cc.meetings.length) {
-        setStatus("“" + cc.code + "” is set to meet at set times — add its day and times.", "err");
-        return;
-      }
-      if (cc.meetsSetTimes && cc.incompleteMeetings) {
-        setStatus("One of the meeting days for “" + cc.code + "” is missing its day or times.", "err");
-        return;
-      }
-    }
-
     el.generate.disabled = true;
     setStatus("Generating…");
     try {
@@ -574,14 +629,16 @@
         setTimeout(function () { download(job.bytes, job.filename); }, i * 350);
       });
 
+      var schedulingNote = (res.shortfalls.length || res.warnings.length)
+        ? " Review the scheduling notices above; the PDFs contain the hours that could be recorded." : "";
       var noun = jobs.length === 1 ? "PDF" : jobs.length + " PDFs";
       if (continued > 0) {
         setStatus("Done. " + noun + " downloaded. " + res.monthYearLabel + " needs more rows " +
           "than one copy of the form holds, so the rest are in the file" +
           (continued === 1 ? "" : "s") + " ending “_continued” — sign and submit " +
-          (continued === 1 ? "it" : "them") + " too.", "warn");
+          (continued === 1 ? "it" : "them") + " too." + schedulingNote, "warn");
       } else {
-        setStatus("Done. " + noun + " downloaded. Sign them in Adobe after opening.", "ok");
+        setStatus("Done. " + noun + " downloaded. Sign them in Adobe after opening." + schedulingNote, schedulingNote ? "warn" : "ok");
       }
     } catch (e) {
       console.error(e);
@@ -651,20 +708,21 @@
     addClassRow(""); // start empty: one placeholder row reading "e.g. ACC 201"
     refreshPlaceholders();
 
+    $("addUnavailable").addEventListener("click",addUnavailableRow);
     el.addClass.addEventListener("click", function () { addClassRow(""); refreshPlaceholders(); });
     el.dayStart.addEventListener("input", refreshPlaceholders);
 
     // Changing the month or year moves the whole report period, so the date
     // boxes are re-bounded and reset to the new full span.
     el.month.addEventListener("change", function () {
-      syncPeriodDates(true); renderHoursPanel();
+      syncPeriodDates(true); refreshPlaceholders();
     });
     el.year.addEventListener("input", function () {
-      labelMonths(); syncPeriodDates(true); renderHoursPanel();
+      labelMonths(); syncPeriodDates(true); refreshPlaceholders();
     });
     [el.startDate, el.endDate].forEach(function (n) {
-      n.addEventListener("change", function () { checkDates(); renderHoursPanel(); });
-      n.addEventListener("input", function () { checkDates(); renderHoursPanel(); });
+      n.addEventListener("change", function () { checkDates(); refreshPlaceholders(); });
+      n.addEventListener("input", function () { checkDates(); refreshPlaceholders(); });
     });
     [el.form816, el.form819, el.form817].forEach(function (n) {
       n.addEventListener("change", function () { renderHoursPanel(); });

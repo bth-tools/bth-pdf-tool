@@ -1,16 +1,16 @@
 # Bridge to Hope — DHS Hours Auto-Filler
 
-Current release: **v5.1** (`5.1.0` in package metadata). The version appears beneath
-the app title. Major scheduling or workflow changes advance the first number;
-smaller improvements and fixes advance the second. Update this release label,
-the label in `index.html`, and `package.json` together for future releases.
+Current release: **v6.3.3** (`6.3.3` in package metadata). The version appears beneath
+the app title. This is the owner's chosen release label, not a reconstructed count
+of individual historical changes. Update this label, `index.html`, asset cache
+versions, and `package.json` together for future releases.
 
 A single static web page that auto-fills the First-To-Work (TANF) report-period forms
 for student-parents in the **Bridge to Hope** program:
 
-- **DHS 816** *Educational Activity Attendance Form* — gets **Monday & Wednesday** dates.
-- **DHS 819** *Unsupervised Study Timesheet* — gets **Tuesday & Thursday** dates.
-- **DHS 817** *Monitored Study Session Form* — gets the **same Tuesday & Thursday** dates
+- **DHS 816** *Educational Activity Attendance Form* — records scheduled attendance; automatic defaults are **Monday & Wednesday**.
+- **DHS 819** *Unsupervised Study Timesheet* — records study; automatic defaults are **Tuesday & Thursday**.
+- **DHS 817** *Monitored Study Session Form* — gets the **same study schedule**
   as the DHS 819. Its certification block (study-monitor name, signature, date, phone,
   email, other contact) is left **blank and fillable** for the monitor to complete.
 
@@ -78,13 +78,32 @@ are observed Monday. A following year's New Year holiday may fall on December 31
 These are the current recurring rules, projected through the supported year range;
 future changes to UH policy will require an update.
 
-Classes with **set times enabled** omit holiday attendance (including flexible
-blocks) and study. Classes with that switch **off** are async and retain holiday
-attendance and study. Each class's study minutes on both DHS 819 and DHS 817 equal
-its recorded attendance minutes in each FTW week after holidays and date clipping.
-Study uses the usual available slots first, then moves within that same week if
-needed. If the selected dates cannot fit matching study, generation stops with
-an explanatory error rather than silently dropping hours.
+Classes with **set times enabled** omit holiday attendance (including additional
+class hours). Async attendance and **all study** may occur on holidays. Study is
+limited to actual recorded attendance per class, per FTW week, after date clipping.
+If time is insufficient, the tool records what fits, lists unplaced hours, and
+still generates the selected PDFs. It does not enforce a 20- or 30-hour target.
+
+### Unavailable times and custom study
+
+The optional **Unavailable Times** section appears before Classes. Select one or
+more weekdays and enter start/end times for recurring work or other commitments.
+Automatic async attendance, additional class hours, and all study avoid these
+intervals. Enter an overnight shift as two blocks; `24:00` is an accepted end.
+Fixed meetings remain as entered; overlaps with work or other classes are flagged.
+Incomplete or invalid scheduling entries are omitted with a notice, without
+preventing output for complete entries.
+
+**Choose study times** is off by default on each course. One preferred day/start
+receives the whole weekly allowance, with its end calculated automatically.
+Adding slots splits the allowance evenly by default; optional hours can specify
+a slot's share. Preferred times can move or split around conflicts. The scheduler
+searches other openings in the same FTW week if needed, starting automatic times
+at the configured day start (8:00 a.m. by default). It never moves hours into another
+week or exceeds that week's recorded attendance. Custom study is placed before
+automatic study. Expand **Scheduled study times** to review actual dated results,
+including holidays and partial weeks. Both 819 and 817 use those same results.
+Changing or removing any block immediately updates the schedule and hours summary.
 
 Spring break, other non-instructional days, semester boundaries, emergency closures,
 and FTW employment holiday rules are **not** automatically excluded. Review the
@@ -105,19 +124,19 @@ blocks, study blocks fill in around them, and the PDFs report the timetable.
   - how much class time an *online* class earns per week — 3 credits = 3.0 hrs, laid out
     as 1.5 + 1.5 on Mon & Wed exactly as before; 1 credit = a single 1.0-hr block;
     4 credits = 1.5 + 1.5 + 1;
-  - **Study matches attendance**, including selected flexible blocks and typed async
+  - **Study aims to match attendance when space permits**, including selected flexible blocks and typed async
     overrides. A 3-credit class meeting for 1.25 hours gets 1.25 study hours; with
     1.75 flexible attendance hours added, it gets 3 study hours in a non-holiday week.
 - Each class row also asks: **"Does this class meet in person or online at scheduled times?"** (off by default).
   - **Off** — the class is treated as online/asynchronous and auto-sequences from the day
     start time on Mon & Wed. You can still override an individual block's start/end, in
-    which case those exact times are used on both days, as before.
+    which case those times are preferred on both days and move around conflicts.
   - **On** — the row expands into one or more meetings (Day + Starts + Ends, with
     "+ Add another day"). Those meetings claim their exact days and times on the forms,
     and **by default that is all the class documents.**
 - Async blocks automatically **skip over** any time already claimed by a scheduled class
-  on the same day; no two blocks ever overlap. Two scheduled classes that collide produce
-  a plain-language inline error instead of a broken PDF.
+  on the same day and all unavailable intervals. Fixed meetings that collide are kept
+  as entered with a warning; automatic blocks never add overlaps.
 - **Remainder blocks are opt-in.** When a scheduled class meets for fewer hours than it
   carries in credits, its row shows a quiet note — *"This class meets 1.5 of its 4 credit
   hours."* — and one switch: **"Include additional approved class hours", off by
@@ -157,7 +176,7 @@ blocks, study blocks fill in around them, and the PDFs report the timetable.
   day's rows are split across the boundary.
 - Shows a live hours summary below the Classes section (class attendance, study time, and
   total hrs/period for the checked forms) that reflects the actual dated rows after
-  holiday exclusions and date clipping. Study equals attendance; selecting both
+  holiday exclusions, availability and date clipping. Study cannot exceed attendance; selecting both
   study forms does not double-count the same study time in the summary.
   The panel is informational only — required hours vary by situation and should be
   confirmed with the FTW case manager or BTH Campus Contact. It also names the report
@@ -260,7 +279,8 @@ Then open <http://localhost:8000/> in your browser.
 3. Pick the month and year (default to the current month/year). The dropdown shows the
    FTW report period each month covers, and the start/end dates start on that full
    period — narrow them only for part of a period.
-4. Add each class by course code and number, such as ENG 100. Automatic attendance
+4. Optionally add recurring work or other commitments under **Unavailable Times**.
+   Then add each class by course code and number, such as ENG 100. Automatic attendance
    and study times start at **8:00 a.m.**; expand **Automatic scheduling** to adjust
    that start time. Scheduled meetings keep their entered times. Leave **Credits** on 3 unless a class
    is worth a different number.
@@ -270,8 +290,11 @@ Then open <http://localhost:8000/> in your browser.
 6. If such a class meets for fewer hours than its credits, its row says so and offers
    **"Include additional approved class hours"**. For online activities counted as class time,
    such as recorded lectures. The note shows how many hours this adds before holidays.
-7. Check the hours summary — it totals the selected dates after UH holiday adjustments.
-   Both study forms match attendance per class and FTW week. Review course-specific
+7. Optionally enable **Choose study times** per course. Choose a day/start, add slots
+   to split hours, and review **Scheduled study times** for the calculated end times.
+   Check the hours summary — it totals the selected dates after UH holiday adjustments.
+   Study matches attendance when space permits; unplaced hours appear in notices and
+   do not prevent generation. Review course-specific
    breaks and closures yourself; those are not filtered automatically.
 8. Click **Generate & download selected forms**.
 9. Open each PDF in Adobe, review, sign (and have the monitor complete Section 1 of the
@@ -304,13 +327,17 @@ every value written into every generated PDF against the box it has to fit:
 npm install pdf-lib
 node _dev_test.js
 node _dev_holidays_test.js
-# Or run both suites:
+node _dev_scheduling_test.js
+# Run all suites:
 npm test
 ```
 
 The holiday suite checks published 2026/2027 dates and per-class weekly equality,
 holiday exclusions, async retention, overlaps, and a/p formatting across every
-month from 2020 to 2100, plus partial ranges and insufficient-space errors.
+month from 2020 to 2100, plus partial ranges and insufficient-space partial output.
+
+The scheduling suite covers unavailable intervals, split/custom study, holiday study,
+fragmented gaps, partial output, 120 varied workloads, and editable PDF readback.
 
 The PDF suite writes filled PDFs to `_dev_out/` for inspection. `_dev_golden.json` is a snapshot of
 the original tool's output for all-async configs; the suite fails if the **weekly
