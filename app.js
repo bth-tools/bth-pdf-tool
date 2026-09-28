@@ -199,6 +199,7 @@
       row.remove();
       refreshPlaceholders();
     });
+    row.insertAdjacentHTML("beforeend", '<details class="meeting-dates"><summary>Meeting dates (optional)</summary><div class="grid2"><label>Meeting starts<input class="m-from" type="date" /></label><label>Meeting ends<input class="m-until" type="date" /></label></div></details>');
     list.appendChild(row);
     return row;
   }
@@ -274,6 +275,7 @@
       refreshPlaceholders();
     });
     item.querySelector(".add-study").addEventListener("click",function(){addStudySlot(item);refreshPlaceholders();});
+    item.insertAdjacentHTML("beforeend", '<details class="course-dates"><summary>Course dates (optional)</summary><p class="hint">Retained when you switch report months. Attendance and study stay within these dates.</p><div class="grid2"><label>Course starts<input class="c-from" type="date" /></label><label>Course ends<input class="c-until" type="date" /></label></div></details>');
     item.querySelector(".c-code").value = code || "";
     item.querySelector(".c-credits").value = String(Sched.DEFAULT_CREDITS);
     item.querySelector(".class-row .del").addEventListener("click", function () {
@@ -332,7 +334,7 @@
           var s = Sched.parseTime(mr.querySelector(".m-start").value);
           var e = Sched.parseTime(mr.querySelector(".m-end").value);
           if (day !== "" && s != null && e != null) {
-            meetings.push({ day: parseInt(day, 10), startMin: s, endMin: e });
+            meetings.push({ day: parseInt(day, 10), startMin: s, endMin: e, startDate: mr.querySelector(".m-from").value, endDate: mr.querySelector(".m-until").value });
           } else if (day !== "" || s != null || e != null) {
             incomplete++;
           }
@@ -356,6 +358,8 @@
         });
       }
       var cl=out[out.length-1];
+      cl.startDate=item.querySelector(".c-from").value;
+      cl.endDate=item.querySelector(".c-until").value;
       cl.customStudy=item.querySelector(".c-custom-study").checked;
       cl.studySlots=Array.prototype.map.call(item.querySelectorAll(".study-slot"),function(row){
         var day=row.querySelector(".s-day").value;
@@ -697,6 +701,71 @@
     });
   }
 
+  function setupImport() {
+    var fileInput=$("scheduleFile"),status=$("importStatus"),review=$("importReview"),originalUrl;
+    function field(host,label,value,type) {
+      var wrap=document.createElement("label");wrap.textContent=label;
+      var input=document.createElement("input");input.type=type || "text";input.value=value == null ? "" : value;
+      wrap.appendChild(input);host.appendChild(wrap);return input;
+    }
+    fileInput.addEventListener("change",async function(){
+      var file=fileInput.files[0];if(!file)return;
+      review.replaceChildren();review.hidden=true;fileInput.disabled=true;
+      try {
+        var reader=await import("./import-reader.mjs?v=7.0.0");
+        var result=await reader.readSchedule(file,function(message){status.textContent=message;});
+        if(!result.courses.length)throw new Error("No supported course entries were found. Try the STAR print view, or enter your classes manually.");
+        status.textContent="Found "+result.courses.length+" courses across "+result.pages+" pages."+(result.ocr?" Scanned text was recognized: check every field against the original.":" Review before using this information.");
+        if(originalUrl)URL.revokeObjectURL(originalUrl);originalUrl=URL.createObjectURL(file);
+        var source=document.createElement("a");source.href=originalUrl;source.target="_blank";source.rel="noopener";source.textContent="Open original schedule for comparison";review.appendChild(source);
+        var info=document.createElement("div");info.className="grid2";review.appendChild(info);
+        var name=field(info,"Student name",result.name || el.name.value);
+        var institution=field(info,"Institution",result.institution || el.institution.value);
+        var entries=result.courses.map(function(c){
+          var box=document.createElement("div");box.className="import-course";review.appendChild(box);
+          var grid=document.createElement("div");grid.className="grid2";box.appendChild(grid);
+          var code=field(grid,"Course code",c.code),credits=field(grid,"Credits",c.credits,"number");credits.min=1;credits.max=4;
+          var from=field(grid,"Course starts",c.startDate,"date"),until=field(grid,"Course ends",c.endDate,"date");
+          var label=document.createElement("label");label.textContent="Attendance type";
+          var mode=document.createElement("select");
+          [["unknown","Choose: schedule is unclear"],["async","Async — no scheduled meetings"],["scheduled","Meets at scheduled times"]].forEach(function(pair){var o=document.createElement("option");o.value=pair[0];o.textContent=pair[1];mode.appendChild(o);});
+          mode.value=c.mode;label.appendChild(mode);box.appendChild(label);
+          var meeting=document.createElement("p");meeting.className="hint";
+          meeting.textContent=c.meetings.length?c.meetings.map(function(m){return DAY_OPTIONS[m.day]+" "+Sched.formatTime(m.startMin)+"–"+Sched.formatTime(m.endMin)+" · "+m.startDate+" through "+m.endDate;}).join("; "):"No fixed meeting times were found.";box.appendChild(meeting);
+          c.notes.forEach(function(note){var n=document.createElement("p");n.className="class-error";n.textContent=note;box.appendChild(n);});
+          var details=document.createElement("details"),summary=document.createElement("summary"),text=document.createElement("pre");summary.textContent="Extracted source text";text.textContent=c.source;details.append(summary,text);box.appendChild(details);
+          return {course:c,code:code,credits:credits,from:from,until:until,mode:mode};
+        });
+        var check=document.createElement("label");check.className="check import-confirm";var confirmed=document.createElement("input");confirmed.type="checkbox";check.append(confirmed,document.createTextNode("I checked the extracted information against my schedule."));review.appendChild(check);
+        var apply=document.createElement("button");apply.type="button";apply.className="primary";apply.textContent="Use these classes";review.appendChild(apply);
+        var note=document.createElement("p");note.className="hint";note.textContent="Replaces the current class list. Unavailable times, report month and form selection are kept. You can edit all imported information before generating.";review.appendChild(note);
+        var issue=document.createElement("p");issue.className="class-error";issue.hidden=true;issue.setAttribute("role","alert");review.appendChild(issue);
+        apply.addEventListener("click",function(){
+          var error=!confirmed.checked?"Check the review box after comparing with your schedule.":"";
+          entries.forEach(function(e){if(!e.code.value.trim()||![1,2,3,4].includes(Number(e.credits.value)))error="Each course needs a code and 1–4 credits.";
+            if(e.mode.value==="unknown")error="Choose the attendance type for each unclear course.";
+            if(e.from.value&&e.until.value&&e.from.value>e.until.value)error="A course start date is after its end date.";});
+          if(error){issue.textContent=error;issue.hidden=false;return;}
+          el.classList.replaceChildren();el.name.value=name.value.trim();el.institution.value=institution.value.trim();
+          entries.forEach(function(e){var item=addClassRow(e.code.value.trim());item.querySelector(".c-credits").value=e.credits.value;
+            item.querySelector(".c-from").value=e.from.value;item.querySelector(".c-until").value=e.until.value;
+            if(e.mode.value==="scheduled"){
+              item.querySelector(".c-meets").checked=true;item.classList.add("scheduled");item.querySelector(".meetings").hidden=false;
+              e.course.meetings.forEach(function(m){var row=addMeetingRow(item);row.querySelector(".m-day").value=m.day;
+                function time(n){return String(Math.floor(n/60)).padStart(2,"0")+":"+String(n%60).padStart(2,"0");}
+                row.querySelector(".m-start").value=time(m.startMin);row.querySelector(".m-end").value=time(m.endMin);
+                row.querySelector(".m-from").value=m.startDate;row.querySelector(".m-until").value=m.endDate;});
+              if(!e.course.meetings.length)addMeetingRow(item);
+            }
+          });
+          refreshPlaceholders();review.hidden=true;status.textContent="Imported "+entries.length+" courses. Review the class fields and hours below, then generate your selected forms. Additional approved hours remain off.";
+        });
+        review.hidden=false;
+      }catch(error){status.textContent="Import could not finish: "+error.message+" Your existing entries have not changed.";}
+      finally{fileInput.disabled=false;}
+    });
+  }
+
   /* ============================== STARTUP ===================================
    * Runs once when the page loads: builds the dropdowns, adds the first empty
    * class row, wires up the buttons, and pre-fetches the blank PDFs.
@@ -729,6 +798,7 @@
     });
     el.generate.addEventListener("click", generate);
     setupHowTo();
+    setupImport();
 
     // Fetch the blank PDFs now so the first Generate is instant, and so a
     // missing file shows up straight away rather than at download time.

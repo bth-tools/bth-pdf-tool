@@ -1,6 +1,6 @@
 # Bridge to Hope — DHS Hours Auto-Filler
 
-Current release: **v6.3.3** (`6.3.3` in package metadata). The version appears beneath
+Current release: **v7.0.0** (`7.0.0` in package metadata). The version appears beneath
 the app title. This is the owner's chosen release label, not a reconstructed count
 of individual historical changes. Update this label, `index.html`, asset cache
 versions, and `package.json` together for future releases.
@@ -23,6 +23,38 @@ Use **Appearance → System, Light, or Dark** at the top of the page. System fol
 the device's color preference. Light and Dark are remembered on this browser;
 if browser storage is blocked, the choice still works for the current page.
 The theme affects the screen only, not the generated PDFs.
+
+---
+
+## Import a STAR schedule (optional)
+
+In **MyUH Services → STAR GPS Registration**, select the current term, then
+**Print → Save as PDF**. Choose that PDF in **Import a STAR schedule**, above Student.
+Review the name, institution, course codes, credits, meeting times and date ranges.
+Compare the course count with the original too. Confirm unclear attendance types,
+check the review box, then select **Use these classes**.
+
+**Everything stays editable after import.** The importer fills the normal form controls;
+it does not lock them. You can change student information, courses, credits, attendance
+types, meeting times, dates, additional hours and study preferences, or add/remove classes.
+Course dates and individual meeting dates are under their optional disclosure controls.
+Both date limits apply; when extending a course, review its meeting limits too.
+
+Import replaces the class list after confirmation. Report month, unavailable times and
+form selections remain. Additional approved hours start off. TBA/ONLINE alone requires
+confirmation rather than being assumed async; mixed scheduled/TBA components do not
+automatically receive extra attendance. Study and automatic async times come from the
+existing scheduler, not from the PDF. Imported date limits persist when switching months.
+
+Text extraction and scanned-page OCR run locally in the browser. No schedule is sent to
+an OCR or AI service. Supported input is the STAR print view (up to 12 pages / 30 MB).
+Scans require careful review. Different layouts or mixed image/text pages can omit or
+misread information; manual entry remains available, and a failed import preserves existing entries.
+
+PDF.js and OCR assets load only when needed, so ordinary manual entry does not download
+them. Vendored assets total about 26 MB; a scan uses only its browser-compatible OCR core.
+Hosting must serve `.mjs` as JavaScript over HTTP(S). GitHub Pages needs no backend or build step.
+Third-party versions, licenses and asset details are in `lib/IMPORT-LIBRARIES.md`.
 
 ---
 
@@ -328,6 +360,7 @@ npm install pdf-lib
 node _dev_test.js
 node _dev_holidays_test.js
 node _dev_scheduling_test.js
+node _dev_import_test.js
 # Run all suites:
 npm test
 ```

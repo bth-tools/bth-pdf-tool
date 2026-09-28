@@ -852,8 +852,13 @@
       if (valid(b)) blocked[b.day].push(b);
       else warnings.push("An unavailable time is incomplete or invalid and was not applied.");
     });
+    function inDates(date, entry) {
+      if (date === true) return true;
+      var iso = toISODate(date);
+      return (!entry.startDate || iso >= entry.startDate) && (!entry.endDate || iso <= entry.endDate);
+    }
     function allowed(day, ix, kind) {
-      return available[day] && (kind === "study" || !isScheduled(classes[ix]) ||
+      return available[day] && inDates(available[day], classes[ix]) && (kind === "study" || !isScheduled(classes[ix]) ||
         available[day] === true || !uhHoliday(available[day]));
     }
     function claims(day) { return blocked[day].concat(att[day], study[day]); }
@@ -869,7 +874,7 @@
       if (!(c.meetings || []).length || c.incompleteMeetings) warnings.push(c.code + ": incomplete meeting times were omitted; enter a day, start and end to record them.");
       (c.meetings || []).forEach(function (m) {
         if (!valid(m)) { warnings.push(c.code + ": an invalid meeting was omitted."); return; }
-        if (!allowed(m.day, ix, "attendance")) return;
+        if (!allowed(m.day, ix, "attendance") || !inDates(available[m.day], m)) return;
         if (claims(m.day).some(function (b) { return overlap(m, b); }))
           warnings.push(c.code + ": a fixed meeting on " + DAY_NAMES[m.day] + " overlaps another class or unavailable time. Check the entered times.");
         add(m.day, m.startMin, m.endMin - m.startMin, ix, "attendance", {scheduled:true});

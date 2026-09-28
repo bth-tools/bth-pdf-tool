@@ -15,14 +15,14 @@
   <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png" />
-  <script src="theme.js?v=6.3.3"></script>
-  <link rel="stylesheet" href="styles.css?v=6.3.3" />
+  <script src="theme.js?v=7.0.0"></script>
+  <link rel="stylesheet" href="styles.css?v=7.0.0" />
 </head>
 <body>
   <main class="wrap">
     <header class="app-head">
       <h1>Bridge to Hope</h1>
-      <p class="app-version" aria-label="Version 6.3.3">v6.3.3</p>
+      <p class="app-version" aria-label="Version 7.0.0">v7.0.0</p>
       <p class="sub">First-To-Work attendance &amp; study-time auto-filler<br />
         <span class="muted">DHS 816 (class attendance), DHS 819 (unsupervised study) &amp; DHS 817 (monitored study)</span></p>
       <button id="howToBtn" type="button" class="help-btn">How to use</button>
@@ -43,6 +43,16 @@
         <label class="check"><input id="form819" type="checkbox" /> Unsupervised Study (DHS 819)</label>
         <label class="check"><input id="form817" type="checkbox" /> Monitored Study (DHS 817)</label>
       </div>
+    </section>
+
+    <section class="card">
+      <h2>Import a STAR schedule <span class="opt">(optional)</span></h2>
+      <p class="hint">MyUH Services → STAR GPS Registration → current term → Print → Save as PDF.
+        Choose that PDF below, review what was found, then add it to the form. Manual entry still works.</p>
+      <label class="import-file">Schedule PDF<input id="scheduleFile" type="file" accept="application/pdf,.pdf" /></label>
+      <p class="hint">Read on this device. The schedule is not sent to a server. Scanned pages take longer and need careful review.</p>
+      <p id="importStatus" role="status" class="hint"></p>
+      <div id="importReview" hidden></div>
     </section>
 
     <section class="card">
@@ -174,7 +184,14 @@
           This changes the screen only; your PDFs keep their original appearance.</li>
         <li><strong>Pick your forms</strong> — check the ones you need (816, 817, and/or 819);
           your BTH email says which.</li>
-        <li><strong>Type your name and school.</strong></li>
+        <li><strong>Import a STAR schedule (optional)</strong> — in MyUH Services,
+          open STAR GPS Registration, choose the current term, and Print → Save as PDF.
+          Choose that file under <strong>Import a STAR schedule</strong>. Compare every course,
+          credit, meeting time and date with the original, including whether any courses were missed.
+          Confirm unclear attendance types, then select <strong>Use these classes</strong>.
+          This replaces your class list; you can still edit everything before generating.
+          Scanned pages use local text recognition and need extra care.</li>
+        <li><strong>Type your name and school.</strong> Or review the name and school filled by the schedule import above.</li>
         <li><strong>Pick the month</strong> — it starts on this month. First-To-Work reports
           whole Sunday–Saturday weeks, and a week counts for the month its <strong>Friday</strong>
           falls in, so a form can open or close in the next-door month: September 2026 runs
@@ -184,7 +201,10 @@
           times for work or other commitments. Automatic async attendance, additional class hours,
           and study avoid these blocks. Fixed class meetings stay as entered; conflicts are flagged.</li>
         <li><strong>Add your classes</strong> — type each class code in order; the times fill in
-          for you. Leave <strong>Credits</strong> on 3 unless a class is worth a different number.</li>
+          for you. Leave <strong>Credits</strong> on 3 unless a class is worth a different number.
+          If imported, review the populated classes instead. Expand <strong>Course dates</strong>
+          or a meeting's date options to review date limits. These limits stay in place when you
+          change the report month. Study times are calculated by the tool, not extracted from STAR.</li>
         <li><strong>Set class times if needed</strong> — turn on “Does this class meet in person or
           online at scheduled times?” and enter its days and times. Leave it off for async classes.
           Expand <strong>Automatic scheduling</strong> to change the default 8:00 a.m. start
@@ -212,8 +232,9 @@
   </div>
 
   <script src="lib/pdf-lib.min.js"></script>
-  <script src="schedule.js?v=6.3.3"></script>
-  <script src="pdffill.js?v=6.3.3"></script>
-  <script src="app.js?v=6.3.3"></script>
+  <script src="schedule.js?v=7.0.0"></script>
+  <script src="pdffill.js?v=7.0.0"></script>
+  <script src="schedule-import.js?v=7.0.0"></script>
+  <script src="app.js?v=7.0.0"></script>
 </body>
 </html>
