@@ -1,9 +1,14 @@
 # Bridge to Hope — DHS Hours Auto-Filler
 
-Current release: **v7.0.0** (`7.0.0` in package metadata). The version appears beneath
+Current release: **v7.0.5** (`7.0.5` in package metadata). The version appears beneath
 the app title. This is the owner's chosen release label, not a reconstructed count
 of individual historical changes. Update this label, `index.html`, asset cache
 versions, and `package.json` together for future releases.
+
+Local scenario evidence uses the owner's numbered folders: `01/Test 1`, `01/Test 2`,
+and the same pattern for `02` through `30`. Save each future run in the next unused
+`Test N` folder inside its scenario, retaining previous runs. Shared reports, matrices
+and inventories belong in the existing corpus `INFO` folder.
 
 A single static web page that auto-fills the First-To-Work (TANF) report-period forms
 for student-parents in the **Bridge to Hope** program:
@@ -31,7 +36,7 @@ The theme affects the screen only, not the generated PDFs.
 In **MyUH Services → STAR GPS Registration**, select the current term, then
 **Print → Save as PDF**. Choose that PDF in **Import a STAR schedule**, above Student.
 Review the name, institution, course codes, credits, meeting times and date ranges.
-Compare the course count with the original too. Confirm unclear attendance types,
+Compare the course count with the original too. Check any extraction notices,
 check the review box, then select **Use these classes**.
 
 **Everything stays editable after import.** The importer fills the normal form controls;
@@ -41,10 +46,15 @@ Course dates and individual meeting dates are under their optional disclosure co
 Both date limits apply; when extending a course, review its meeting limits too.
 
 Import replaces the class list after confirmation. Report month, unavailable times and
-form selections remain. Additional approved hours start off. TBA/ONLINE alone requires
-confirmation rather than being assumed async; mixed scheduled/TBA components do not
+form selections remain. Additional approved hours start off. A course without extracted
+meeting days/times defaults to async, including TBA/ONLINE. Mixed scheduled/TBA components do not
 automatically receive extra attendance. Study and automatic async times come from the
 existing scheduler, not from the PDF. Imported date limits persist when switching months.
+
+Damaged meeting text is flagged for review without blocking import. Check the original
+and add missing fixed meetings in the normal class fields. Clearly stated single-campus
+institutions are recovered where possible; multiple-campus enrollment keeps the existing
+editable institution field without selecting a primary campus.
 
 Text extraction and scanned-page OCR run locally in the browser. No schedule is sent to
 an OCR or AI service. Supported input is the STAR print view (up to 12 pages / 30 MB).

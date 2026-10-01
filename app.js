@@ -712,7 +712,7 @@
       var file=fileInput.files[0];if(!file)return;
       review.replaceChildren();review.hidden=true;fileInput.disabled=true;
       try {
-        var reader=await import("./import-reader.mjs?v=7.0.0");
+        var reader=await import("./import-reader.mjs?v=7.0.5");
         var result=await reader.readSchedule(file,function(message){status.textContent=message;});
         if(!result.courses.length)throw new Error("No supported course entries were found. Try the STAR print view, or enter your classes manually.");
         status.textContent="Found "+result.courses.length+" courses across "+result.pages+" pages."+(result.ocr?" Scanned text was recognized: check every field against the original.":" Review before using this information.");
@@ -728,7 +728,7 @@
           var from=field(grid,"Course starts",c.startDate,"date"),until=field(grid,"Course ends",c.endDate,"date");
           var label=document.createElement("label");label.textContent="Attendance type";
           var mode=document.createElement("select");
-          [["unknown","Choose: schedule is unclear"],["async","Async — no scheduled meetings"],["scheduled","Meets at scheduled times"]].forEach(function(pair){var o=document.createElement("option");o.value=pair[0];o.textContent=pair[1];mode.appendChild(o);});
+          [["async","Async — no scheduled meetings"],["scheduled","Meets at scheduled times"]].forEach(function(pair){var o=document.createElement("option");o.value=pair[0];o.textContent=pair[1];mode.appendChild(o);});
           mode.value=c.mode;label.appendChild(mode);box.appendChild(label);
           var meeting=document.createElement("p");meeting.className="hint";
           meeting.textContent=c.meetings.length?c.meetings.map(function(m){return DAY_OPTIONS[m.day]+" "+Sched.formatTime(m.startMin)+"–"+Sched.formatTime(m.endMin)+" · "+m.startDate+" through "+m.endDate;}).join("; "):"No fixed meeting times were found.";box.appendChild(meeting);
@@ -743,7 +743,6 @@
         apply.addEventListener("click",function(){
           var error=!confirmed.checked?"Check the review box after comparing with your schedule.":"";
           entries.forEach(function(e){if(!e.code.value.trim()||![1,2,3,4].includes(Number(e.credits.value)))error="Each course needs a code and 1–4 credits.";
-            if(e.mode.value==="unknown")error="Choose the attendance type for each unclear course.";
             if(e.from.value&&e.until.value&&e.from.value>e.until.value)error="A course start date is after its end date.";});
           if(error){issue.textContent=error;issue.hidden=false;return;}
           el.classList.replaceChildren();el.name.value=name.value.trim();el.institution.value=institution.value.trim();

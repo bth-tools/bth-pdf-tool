@@ -25,15 +25,15 @@ const parsed = Import.parse([{text:fixture,ocr:true}]);
 assert.equal(parsed.name,'Example Student');
 assert.equal(parsed.institution,'UH Maui College');
 assert.deepEqual(parsed.courses.map(c=>[c.code,c.credits,c.mode]),[
-  ['ABC 123',3,'async'],['DEF 234L',2,'scheduled'],['GHI 345',1,'unknown']]);
+  ['ABC 123',3,'async'],['DEF 234L',2,'scheduled'],['GHI 345',1,'async']]);
 assert.deepEqual(parsed.courses[1].meetings,[{day:6,startMin:540,endMin:740,startDate:'2026-08-29',endDate:'2026-10-17'}]);
 assert(parsed.courses[1].notes.some(n=>n.includes('TBA')));
-assert(parsed.courses[2].notes.length);
+assert.equal(parsed.courses[2].notes.length,0,'ordinary ONLINE/TBA needs no warning');
 assert.equal(Import.parse([{text:'not a schedule'}]).courses.length,0);
 assert.equal(Import.parse([{text:fixture.replace('Example Student','{ Initial: 13.99 / 14 hrs'),ocr:true}]).name,'');
 assert.equal(Import.parse([{text:fixture.replace('Example Student','Kaʻimi O’Brien')}]).name,'Kaʻimi O’Brien');
 const incomplete=Import.parse([{text:'ABC 123: Unknown\nWhen/Where: (TBA to TBA) / ONLINE\n'}]).courses[0];
-assert.equal(incomplete.mode,'unknown');assert.equal(incomplete.credits,null);assert.equal(incomplete.startDate,'');assert(incomplete.notes.length>=3);
+assert.equal(incomplete.mode,'async');assert.equal(incomplete.credits,null);assert.equal(incomplete.startDate,'');assert(incomplete.notes.length>=2);
 assert(Import.parse([{text:fixture.replace('Credits: 3','Credits: 5')}]).courses[0].notes.some(n=>n.includes('credits')));
 assert.equal(Import.parse([{text:fixture.replace('Campus: Maui College','Campus: Hilo')}]).institution,'');
 const split=fixture.indexOf('DEF 234L');
@@ -55,4 +55,29 @@ assert.equal(sum(r.studyRows),150);
 // A course outside the report dates contributes no rows.
 r=S.compute({...base,classes:[{code:'FUTURE',credits:3,startDate:'2026-10-01',endDate:'2026-12-18'}]});
 assert.equal(r.attendanceRows.length,0);assert.equal(r.studyRows.length,0);
-console.log('PASS: import facts, ambiguous TBA, OCR date normalization, component dates, and course boundaries');
+// A print/date header must not hide the actual student/program line.
+assert.equal(Import.parse([{text:'Generated 9/30/26 | Test\n'+fixture}]).name,'Example Student');
+assert.equal(Import.parse([{text:'Schedule Details | Fall term\n'+fixture}]).name,'Example Student');
+assert.equal(Import.parse([{text:fixture.replace('Example Student','Kaʻimi O’Brien-Santos')}]).name,'Kaʻimi O’Brien-Santos');
+assert.equal(Import.parse([{text:'Another Student | Program\n'+fixture}]).name,'','conflicting names remain editable blanks');
+// Quoted CRN labels caused false multi-campus results on scanned printouts.
+const quoted=Import.parse([{text:fixture.replaceAll('Campus: Maui College','Campus: Maui College ‘CRN: 12345'),ocr:true}]);
+assert.equal(quoted.institution,'UH Maui College');
+assert(quoted.courses.every(c=>c.campus==='Maui College'));
+assert.equal(Import.parse([{text:fixture.replaceAll('Campus: Maui College','Campus: Hilo ‘CRN: 12345'),ocr:true}]).institution,'UH Hilo');
+// Keep multi-campus presentation unchanged; never invent a primary campus.
+assert.equal(Import.parse([{text:fixture.replace('Campus: Maui College','Campus: Manoa')}]).institution,'');
+const spaced=Import.parse([{text:fixture.replace('S (0900 to 1220)','M W (0900 to 1220)')}]).courses[1];
+assert.deepEqual(spaced.meetings.map(m=>m.day),[1,3]);
+assert(spaced.meetings.every(m=>m.startDate==='2026-08-29'&&m.endDate==='2026-10-17'));
+const damaged=Import.parse([{text:fixture.replace('When/Where: (TBA to TBA) / ONLINE ASYNC','WhenWhere: Wi (12000 1250) / ROOM 208'),ocr:true}]).courses[0];
+assert.equal(damaged.mode,'async');assert.equal(damaged.meetings.length,0);assert(damaged.needsMeetingReview);
+assert(damaged.notes.some(n=>n.includes('meeting text')));
+const slashless=Import.parse([{text:fixture.replace('When/Where: (TBA to TBA) / ONLINE ASYNC','When Where: W (1200 to 1250) / ROOM 208'),ocr:true}]).courses[0];
+assert.equal(slashless.mode,'scheduled');assert.deepEqual(slashless.meetings.map(m=>[m.day,m.startMin,m.endMin]),[[3,720,770]]);
+assert.equal(slashless.needsMeetingReview,false,'room numbers are not damaged times');
+const mixed=Import.parse([{text:fixture.replace('S (0900 to 1220)','S (0900 to 1220), W (13000 1400)')}]).courses[1];
+assert.equal(mixed.mode,'scheduled');assert.equal(mixed.meetings.length,1);assert(mixed.needsMeetingReview);
+const invalid=Import.parse([{text:fixture.replace('S (0900 to 1220)','S (1260 to 1220)')}]).courses[1];
+assert.equal(invalid.mode,'async');assert(invalid.needsMeetingReview);assert.equal(invalid.meetings.length,0);
+console.log('PASS: async defaults, header/name review, quoted campus labels, multi-campus preservation, damaged OCR warnings, weekday spacing, mixed components and course boundaries');

@@ -17,7 +17,8 @@ export async function readSchedule(file, status) {
           if(!window.Tesseract)await new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='lib/ocr/tesseract.min.js';script.onload=resolve;script.onerror=()=>reject(new Error('Could not load local text recognition.'));document.head.appendChild(script);});
           worker=await window.Tesseract.createWorker('eng',1,{workerPath:new URL('./lib/ocr/worker.min.js',import.meta.url).href,corePath:new URL('./lib/ocr/',import.meta.url).href,langPath:new URL('./lib/ocr',import.meta.url).href,cacheMethod:'none',workerBlobURL:false});
         }
-        const view=page.getViewport({scale:2}),canvas=document.createElement('canvas');canvas.width=view.width;canvas.height=view.height;
+        // More pixels preserve small names and dense meeting lines in STAR scans.
+        const view=page.getViewport({scale:3}),canvas=document.createElement('canvas');canvas.width=view.width;canvas.height=view.height;
         await page.render({canvasContext:canvas.getContext('2d'),viewport:view}).promise;
         text=(await worker.recognize(canvas)).data.text;ocr=true;
       }

@@ -1,5 +1,23 @@
 # Release notes
 
+## v7.0.5 — September 30, 2026
+
+Five importer accuracy updates:
+
+- Courses without extracted meeting days/times default to async, matching manual entry.
+- Student-name extraction continues past invalid print headers and leaves conflicting names for review.
+- Campus extraction separates quoted CRN labels from clearly stated campus names. Multi-campus presentation remains unchanged.
+- Higher-resolution local OCR recovers small names and dense scanned meeting lines more accurately.
+- Damaged meeting text receives a review notice without blocking import or inventing fixed meetings.
+
+Existing scheduling calculations, approved-hours allowance, editable fields and PDF formatting are preserved.
+Validation: existing scheduling, holiday and PDF suites passed. All 30 STAR scenarios
+(131 courses) matched names, credits, fixed meetings and course date envelopes before
+correction. All 26 single-campus institutions matched; four multi-campus entries needed
+manual completion. Independent checks passed for 72 corpus PDFs (144 pages), plus
+targeted manual/editability checks. Corrected evidence retains historical runs and
+discloses rotating-availability and other verification limits. Hosted release is pending.
+
 ## v7.0.0 — September 27, 2026
 
 - Import a STAR print-view schedule PDF before entering student information. Review extracted
