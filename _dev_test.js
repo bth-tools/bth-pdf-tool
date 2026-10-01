@@ -296,7 +296,10 @@ async function main() {
     dayStartMin: 480, blockMinutes: 90, month: 7, year: 2026, startDate: null, endDate: null
   });
   check("test3: retains entered meetings and generates rows", !res3.error && res3.attendanceRows.length > 0);
-  check("test3: reports fixed conflict", res3.warnings.some(w => /overlaps another class/.test(w)));
+  check("test3: no fixed-conflict repair notice", res3.warnings.length === 0);
+  check("test3: fixed meeting times remain unchanged", res3.attendanceRows.every(r =>
+    r.code === "ACC 201" ? r.start === "9:00a" && r.end === "11:00a" :
+      r.code === "MATH 115" && r.start === "10:00a" && r.end === "12:00p"));
 
   /* ================= TEST 4 — odd hours (evening class) ================= */
   console.log("\nTEST 4 — Mon 5:00 PM–9:00 PM");

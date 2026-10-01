@@ -412,7 +412,7 @@
    * Runs after every change anywhere in the class list. It asks schedule.js
    * for the current timetable and writes the resulting times back into each
    * class row. The hours and expanded study preview use the actual dated rows;
-   * conflicts and unplaced hours appear as notices without blocking downloads.
+   * invalid entries and unplaced hours appear as notices without blocking downloads.
    */
 
   function showClassError(message) {
@@ -733,7 +733,7 @@
       var file=fileInput.files[0];if(!file)return;
       review.replaceChildren();review.hidden=true;fileInput.disabled=true;
       try {
-        var reader=await import("./import-reader.mjs?v=7.0.8");
+        var reader=await import("./import-reader.mjs?v=7.0.9");
         var result=await reader.readSchedule(file,function(message){status.textContent=message;});
         if(!result.courses.length)throw new Error("No supported course entries were found. Try the STAR print view, or enter your classes manually.");
         status.textContent="Found "+result.courses.length+" courses across "+result.pages+" pages."+(result.ocr?" Scanned text was recognized: check every field against the original.":" Review before using this information.");

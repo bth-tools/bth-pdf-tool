@@ -1,5 +1,17 @@
 # Release notes
 
+## v7.0.9 — October 1, 2026
+
+One functional update: remove the fixed-meeting overlap repair notice. Entered
+meetings remain at their actual times, and automatic attendance and study continue
+to update around those meetings and unavailable periods. Incomplete-entry and
+unplaced-hours notices remain available. Help text matches this behavior.
+
+Validation: all four regression scripts passed, including retained fixed meetings,
+unavailable-time avoidance, automatic study placement and PDF readbacks. Browser
+checks reproduced the MATH 103 overlap with no repair notice, confirmed automatic
+times updated after meeting edits, and generated all three forms successfully.
+
 ## v7.0.8 — October 1, 2026
 
 Three time-entry usability updates:

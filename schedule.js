@@ -867,16 +867,13 @@
         startMin: start, endMin: start + duration}, extra || {});
       (kind === "study" ? study : att)[day].push(block);
     }
-    function overlap(a, b) { return a.startMin < b.endMin && b.startMin < a.endMin; }
-    // Keep explicit fixed meetings; flag conflicts without refusing the forms.
+    // Fixed meetings claim their entered times before movable activities are placed.
     classes.forEach(function (c, ix) {
       if (!isScheduled(c)) return;
       if (!(c.meetings || []).length || c.incompleteMeetings) warnings.push(c.code + ": incomplete meeting times were omitted; enter a day, start and end to record them.");
       (c.meetings || []).forEach(function (m) {
         if (!valid(m)) { warnings.push(c.code + ": an invalid meeting was omitted."); return; }
         if (!allowed(m.day, ix, "attendance") || !inDates(available[m.day], m)) return;
-        if (claims(m.day).some(function (b) { return overlap(m, b); }))
-          warnings.push(c.code + ": a fixed meeting on " + DAY_NAMES[m.day] + " overlaps another class or unavailable time. Check the entered times.");
         add(m.day, m.startMin, m.endMin - m.startMin, ix, "attendance", {scheduled:true});
       });
     });
@@ -999,8 +996,8 @@
   /* ========================= THE ONE ENTRY POINT ============================
    * Hand this the filled-in form and it returns everything needed to build the
    * PDFs: the report period, the dated attendance rows, the dated study rows,
-   * the weekly hour totals and the month label. If the entered meeting times
-   * clash it returns an error message instead, and no PDF is produced.
+   * the weekly hour totals and the month label. Fixed meetings keep their entered
+   * times; movable activities use the remaining available openings.
    */
 
   /*
@@ -1017,7 +1014,7 @@
    * September form legitimately carries dates in August. The Month/Year field
    * on the paper form still reads the plain month name and year.
    *
-   * Returns { error } when scheduled meetings collide, otherwise the full result.
+   * Returns the full result with notices for invalid entries or unplaced hours.
    */
   function compute(config) {
     var tmpl = buildWeekTemplate(config);

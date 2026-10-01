@@ -1,9 +1,9 @@
 # Bridge to Hope — DHS Hours Auto-Filler
 
-Current release: **v7.0.8** (`7.0.8` in package metadata). The version appears beneath
-the app title. This release adds three functional updates to v7.0.5: matching clock
-controls for unavailable times, multiple periods under one day selection, and clearer
-study-time entry wording. Under the owner's counting convention, the last digit advances
+Current release: **v7.0.9** (`7.0.9` in package metadata). The version appears beneath
+the app title. This release adds one functional update to v7.0.8: fixed meetings are
+retained without an overlap repair notice, while automatic attendance and study
+continue to update around them. Under the owner's counting convention, the last digit advances
 for each functional update and carries into the middle digit every ten updates
 (for example, v7.0.9 → v7.1.0). The leading digit identifies the major tool generation.
 Update this label, `index.html`, asset cache versions, and `package.json` together.
@@ -141,7 +141,7 @@ Automatic async attendance, additional class hours, and all study avoid these
 intervals. Enter an overnight shift as two blocks: Monday 10 p.m.–midnight, then
 Tuesday midnight–6 a.m., for example. Choose 12:00 a.m. (`00:00`) for midnight;
 as an end time, it means the end of the selected day, preserving the former `24:00` endpoint.
-Fixed meetings remain as entered; overlaps with work or other classes are flagged.
+Fixed meetings remain as entered; automatic attendance and study update around them.
 Incomplete or invalid scheduling entries are omitted with a notice, without
 preventing output for complete entries.
 
@@ -187,8 +187,8 @@ blocks, study blocks fill in around them, and the PDFs report the timetable.
     "+ Add another day"). Those meetings claim their exact days and times on the forms,
     and **by default that is all the class documents.**
 - Async blocks automatically **skip over** any time already claimed by a scheduled class
-  on the same day and all unavailable intervals. Fixed meetings that collide are kept
-  as entered with a warning; automatic blocks never add overlaps.
+  on the same day and all unavailable intervals. Fixed meetings stay as entered
+  without an overlap repair notice; automatic blocks never add overlaps.
 - **Remainder blocks are opt-in.** When a scheduled class meets for fewer hours than it
   carries in credits, its row shows a quiet note — *"This class meets 1.5 of its 4 credit
   hours."* — and one switch: **"Include additional approved class hours", off by
