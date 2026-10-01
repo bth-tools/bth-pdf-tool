@@ -15,14 +15,14 @@
   <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png" />
-  <script src="theme.js?v=7.0.5"></script>
-  <link rel="stylesheet" href="styles.css?v=7.0.5" />
+  <script src="theme.js?v=7.0.8"></script>
+  <link rel="stylesheet" href="styles.css?v=7.0.8" />
 </head>
 <body>
   <main class="wrap">
     <header class="app-head">
       <h1>Bridge to Hope</h1>
-      <p class="app-version" aria-label="Version 7.0.5">v7.0.5</p>
+      <p class="app-version" aria-label="Version 7.0.8">v7.0.8</p>
       <p class="sub">First-To-Work attendance &amp; study-time auto-filler<br />
         <span class="muted">DHS 816 (class attendance), DHS 819 (unsupervised study) &amp; DHS 817 (monitored study)</span></p>
       <button id="howToBtn" type="button" class="help-btn">How to use</button>
@@ -94,8 +94,10 @@
       <p class="hint">Add work hours or other times you cannot use for attendance or study.
         Automatic times update around these weekly blocks. Leave this empty if you do not need it.</p>
       <div id="unavailableList"></div>
-      <button id="addUnavailable" type="button" class="ghost">+ Add unavailable time</button>
-      <p class="hint">For an overnight shift, add two blocks, ending the first at midnight (24:00).</p>
+      <button id="addUnavailable" type="button" class="ghost">+ Add unavailable days</button>
+      <p class="hint">For an overnight shift, use two entries: for example, Monday 10:00 p.m.–midnight
+        and Tuesday midnight–6:00 a.m. Choose 12:00 a.m. (00:00) for midnight;
+        as an end time, it means the end of the selected day.</p>
     </section>
 
     <section class="card">
@@ -199,7 +201,9 @@
           start on the full period — change them only for part of a period.</li>
         <li><strong>Add unavailable times if needed</strong> — select the weekdays and start/end
           times for work or other commitments. Automatic async attendance, additional class hours,
-          and study avoid these blocks. Fixed class meetings stay as entered; conflicts are flagged.</li>
+          and study avoid these blocks. Use <strong>+ Add time</strong> for another period on the same selected days,
+          or <strong>+ Add unavailable days</strong> for different days.
+          Fixed class meetings stay as entered; conflicts are flagged.</li>
         <li><strong>Add your classes</strong> — type each class code in order; the times fill in
           for you. Leave <strong>Credits</strong> on 3 unless a class is worth a different number.
           If imported, review the populated classes instead. Expand <strong>Course dates</strong>
@@ -214,7 +218,8 @@
           For online activities counted as class time, such as recorded lectures.</li>
         <li><strong>Choose study times only if needed</strong> — turn on the option under a class
           and choose a day and start time. One slot gets the full weekly study allowance. Add another
-          slot to split it evenly, or enter hours for a specific slot. End times are calculated.
+          time with <strong>+ Add study time</strong>. Leave all Hours blank to divide the allowance evenly,
+          or enter Hours to request a specific duration for a time. End times are calculated.
           These are preferred times: conflicts or insufficient space move study to another opening
           in the same week. Review the actual study schedule shown under the class.</li>
         <li><strong>Check the hours summary</strong> — it shows exactly what the forms will
@@ -232,9 +237,9 @@
   </div>
 
   <script src="lib/pdf-lib.min.js"></script>
-  <script src="schedule.js?v=7.0.5"></script>
-  <script src="pdffill.js?v=7.0.5"></script>
-  <script src="schedule-import.js?v=7.0.5"></script>
-  <script src="app.js?v=7.0.5"></script>
+  <script src="schedule.js?v=7.0.8"></script>
+  <script src="pdffill.js?v=7.0.8"></script>
+  <script src="schedule-import.js?v=7.0.8"></script>
+  <script src="app.js?v=7.0.8"></script>
 </body>
 </html>

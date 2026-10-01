@@ -355,6 +355,11 @@ button { font: inherit; cursor: pointer; }
 .time-options label { flex: 1 1 110px; min-width: 0; font-size: .85rem; }
 .time-options input, .time-options select { width: 100%; }
 .time-options .remove-time { margin: 0; }
+.unavailable-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.unavailable-actions button { margin: 0; }
+@media (max-width: 420px) {
+  .unavailable-time label { flex-basis: 100%; }
+}
 .study-preview { margin: 8px 2px 18px; font-size: .85rem; }
 .study-preview summary { cursor: pointer; color: var(--brand); }
 .study-preview-content { max-height: 220px; overflow: auto; line-height: 1.7; }

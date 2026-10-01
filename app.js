@@ -204,30 +204,50 @@
     return row;
   }
 
+  function addUnavailableTime(group) {
+    var row=document.createElement("div");row.className="unavailable-time time-options";
+    row.innerHTML='<label>Starts<input class="u-start" type="time" /></label>'+
+      '<label>Ends<input class="u-end" type="time" /></label>'+
+      '<button type="button" class="ghost remove-time">Remove time</button>';
+    row.querySelector(".remove-time").addEventListener("click",function(){row.remove();refreshPlaceholders();});
+    group.querySelector(".unavailable-times").appendChild(row);
+  }
+
   function addUnavailableRow() {
     var row=document.createElement("div");row.className="unavailable-row";
     row.innerHTML='<fieldset><legend>Unavailable days</legend>'+DAY_OPTIONS.map(function(day,i){
       return '<label class="check"><input type="checkbox" value="'+i+'" />'+day+'</label>';
-    }).join("")+'</fieldset><div class="time-options"><label>Starts<input class="u-start" type="text" placeholder="4:00p" /></label>'+
-      '<label>Ends<input class="u-end" type="text" placeholder="6:00p" /></label><button type="button" class="ghost remove-time">Remove</button></div>';
-    row.querySelector(".remove-time").addEventListener("click",function(){row.remove();refreshPlaceholders();});
+    }).join("")+'</fieldset><p class="hint">Every time below applies to all selected days.</p>'+
+      '<div class="unavailable-times"></div><div class="unavailable-actions">'+
+      '<button type="button" class="ghost small add-unavailable-time">+ Add time</button>'+
+      '<button type="button" class="ghost small remove-unavailable-group">Remove these days and times</button></div>';
+    row.querySelector(".remove-unavailable-group").addEventListener("click",function(){row.remove();refreshPlaceholders();});
+    row.querySelector(".add-unavailable-time").addEventListener("click",function(){addUnavailableTime(row);refreshPlaceholders();});
+    addUnavailableTime(row);
     row.addEventListener("input",refreshPlaceholders);row.addEventListener("change",refreshPlaceholders);
     $("unavailableList").appendChild(row);
+    refreshPlaceholders();
   }
   function readUnavailable() {
     var out=[];
     $("unavailableList").querySelectorAll(".unavailable-row").forEach(function(row){
       var days=row.querySelectorAll('input[type="checkbox"]:checked');
-      var start=Sched.parseTime(row.querySelector(".u-start").value),end=Sched.parseTime(row.querySelector(".u-end").value);
-      if(!days.length)out.push({day:null,startMin:start,endMin:end});
-      days.forEach(function(day){out.push({day:Number(day.value),startMin:start,endMin:end});});
+      var times=row.querySelectorAll(".unavailable-time");
+      if(!times.length)out.push({day:null,startMin:null,endMin:null});
+      times.forEach(function(time){
+        var start=Sched.parseTime(time.querySelector(".u-start").value),end=Sched.parseTime(time.querySelector(".u-end").value);
+        // Native clocks represent midnight as 00:00; unavailable ends mean day's end.
+        if(end===0)end=1440;
+        if(!days.length)out.push({day:null,startMin:start,endMin:end});
+        days.forEach(function(day){out.push({day:Number(day.value),startMin:start,endMin:end});});
+      });
     });return out;
   }
   function addStudySlot(item) {
     var row=document.createElement("div");row.className="study-slot time-options";
     row.innerHTML='<label>Study day<select class="s-day"><option value="">Day</option>'+DAY_OPTIONS.map(function(d,i){return '<option value="'+i+'">'+d+'</option>';}).join("")+'</select></label>'+
       '<label>Starts<input class="s-start" type="text" placeholder="7:00p" /></label>'+
-      '<label>Hours <span class="opt">(optional)</span><input class="s-hours" type="number" min="0.0167" step="any" placeholder="Auto split" /></label>'+
+      '<label>Hours <span class="opt">(optional)</span><input class="s-hours" type="number" min="0.0167" step="any" placeholder="Automatic share" /></label>'+
       '<button type="button" class="ghost remove-time">Remove</button>';
     row.querySelector(".remove-time").addEventListener("click",function(){row.remove();refreshPlaceholders();});
     item.querySelector(".study-slots").appendChild(row);
@@ -265,9 +285,10 @@
         "</div>" +
       "</div>";
     item.insertAdjacentHTML("beforeend", '<label class="check meets-line"><input class="c-custom-study" type="checkbox" /> Choose study times</label>'+
-      '<div class="custom-study" hidden><p class="hint">Choose a day and start time; the end is calculated. Add another slot to split the hours. '+
+      '<div class="custom-study" hidden><p class="hint">Choose a day and start time; the end is calculated. One time gets the full weekly study allowance. '+
+      'With multiple times, leave all Hours blank to divide it evenly. Enter Hours to request a specific duration for a time. '+
       'If a preferred time cannot fit, study moves to another available opening in the same week.</p><div class="study-slots"></div>'+
-      '<button type="button" class="ghost small add-study">+ Split across another time</button></div>'+
+      '<button type="button" class="ghost small add-study">+ Add study time</button></div>'+
       '<details class="study-preview"><summary>Scheduled study times</summary><div class="study-preview-content hint"></div></details>');
     item.querySelector(".c-custom-study").addEventListener("change",function(){
       item.querySelector(".custom-study").hidden=!this.checked;
@@ -712,7 +733,7 @@
       var file=fileInput.files[0];if(!file)return;
       review.replaceChildren();review.hidden=true;fileInput.disabled=true;
       try {
-        var reader=await import("./import-reader.mjs?v=7.0.5");
+        var reader=await import("./import-reader.mjs?v=7.0.8");
         var result=await reader.readSchedule(file,function(message){status.textContent=message;});
         if(!result.courses.length)throw new Error("No supported course entries were found. Try the STAR print view, or enter your classes manually.");
         status.textContent="Found "+result.courses.length+" courses across "+result.pages+" pages."+(result.ocr?" Scanned text was recognized: check every field against the original.":" Review before using this information.");

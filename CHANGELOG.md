@@ -1,5 +1,27 @@
 # Release notes
 
+## v7.0.8 — October 1, 2026
+
+Three time-entry usability updates:
+
+- Unavailable Times uses the same native clock controls as scheduled class meetings.
+  A midnight end retains the end-of-day meaning used for overnight shift entry.
+- Select unavailable days once and add several time periods beneath them. Remove a
+  single period or the whole day group; automatic scheduling updates after each edit.
+- Study uses **+ Add study time** and explains automatic equal shares versus optional
+  requested hours, with end times still calculated by the existing scheduler.
+
+Version counting follows the owner's single-digit/tens convention. Scheduling policy,
+STAR import, PDF formatting and attendance/study calculations are preserved.
+Test Suite 2 remains prepared and untested during this usability release.
+
+Validation: all four existing regression scripts passed (including 972 monthly
+holiday schedules, 120 varied scheduling cases, importer checks and PDF readbacks).
+Browser checks covered grouped periods, independent removals, midnight endpoints,
+fixed-meeting conflict notices, equal/requested study hours and a narrow-screen layout.
+All three browser-generated forms retained editable fields, avoided the entered
+unavailable periods and preserved matching DHS 817/819 study rows and totals.
+
 ## v7.0.5 — September 30, 2026
 
 Five importer accuracy updates:

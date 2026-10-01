@@ -1,9 +1,12 @@
 # Bridge to Hope — DHS Hours Auto-Filler
 
-Current release: **v7.0.5** (`7.0.5` in package metadata). The version appears beneath
-the app title. This is the owner's chosen release label, not a reconstructed count
-of individual historical changes. Update this label, `index.html`, asset cache
-versions, and `package.json` together for future releases.
+Current release: **v7.0.8** (`7.0.8` in package metadata). The version appears beneath
+the app title. This release adds three functional updates to v7.0.5: matching clock
+controls for unavailable times, multiple periods under one day selection, and clearer
+study-time entry wording. Under the owner's counting convention, the last digit advances
+for each functional update and carries into the middle digit every ten updates
+(for example, v7.0.9 → v7.1.0). The leading digit identifies the major tool generation.
+Update this label, `index.html`, asset cache versions, and `package.json` together.
 
 Local scenario evidence uses the owner's numbered folders: `01/Test 1`, `01/Test 2`,
 and the same pattern for `02` through `30`. Save each future run in the next unused
@@ -130,16 +133,23 @@ still generates the selected PDFs. It does not enforce a 20- or 30-hour target.
 
 The optional **Unavailable Times** section appears before Classes. Select one or
 more weekdays and enter start/end times for recurring work or other commitments.
+The clocks match scheduled class meetings. Use **+ Add time** for another period
+on the same selected days; every period in that group applies to all of those days.
+Use **+ Add unavailable days** when a different day selection is needed. Remove
+one time independently, or remove the group's days and all its times together.
 Automatic async attendance, additional class hours, and all study avoid these
-intervals. Enter an overnight shift as two blocks; `24:00` is an accepted end.
+intervals. Enter an overnight shift as two blocks: Monday 10 p.m.–midnight, then
+Tuesday midnight–6 a.m., for example. Choose 12:00 a.m. (`00:00`) for midnight;
+as an end time, it means the end of the selected day, preserving the former `24:00` endpoint.
 Fixed meetings remain as entered; overlaps with work or other classes are flagged.
 Incomplete or invalid scheduling entries are omitted with a notice, without
 preventing output for complete entries.
 
 **Choose study times** is off by default on each course. One preferred day/start
 receives the whole weekly allowance, with its end calculated automatically.
-Adding slots splits the allowance evenly by default; optional hours can specify
-a slot's share. Preferred times can move or split around conflicts. The scheduler
+Use **+ Add study time** for another preferred time. Leave all Hours blank to divide
+the weekly allowance evenly; enter Hours to request a particular time's duration.
+Preferred times can move or split around conflicts. The scheduler
 searches other openings in the same FTW week if needed, starting automatic times
 at the configured day start (8:00 a.m. by default). It never moves hours into another
 week or exceeds that week's recorded attendance. Custom study is placed before
