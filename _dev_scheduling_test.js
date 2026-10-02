@@ -1,7 +1,8 @@
 const assert=require('node:assert/strict'),S=require('./schedule'),fs=require('fs'),P=require('pdf-lib'),F=require('./pdffill');
 const base={year:2026,month:8,startDate:'2026-09-13',endDate:'2026-09-19',classes:[{code:'ASYNC',credits:3}]};
 const sum=rs=>rs.reduce((n,r)=>n+Math.round(r.hours*60),0);
-function verify(cfg){const r=S.compute(cfg);assert.equal(r.error,null);const days={};const budgets={};for(const [kind,rows]of [['attendance',r.attendanceRows],['study',r.studyRows]])for(const row of rows){const d=row.dateObj,start=S.parseTime(row.start),end=start+Math.round(row.hours*60),key=d.toDateString();for(const b of cfg.unavailable||[])if(d.getDay()===b.day)assert(end<=b.startMin||start>=b.endMin,'unavailable conflict');(days[key]??=[]).push([start,end]);const sun=new Date(d);sun.setDate(sun.getDate()-sun.getDay());const k=sun.toDateString()+row.code;(budgets[k]??={attendance:0,study:0})[kind]+=end-start;}for(const blocks of Object.values(days)){blocks.sort((a,b)=>a[0]-b[0]);for(let i=1;i<blocks.length;i++)assert(blocks[i][0]>=blocks[i-1][1],'overlap');}for(const b of Object.values(budgets))assert(b.study<=b.attendance);return r;}
+const iso=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
+function verify(cfg){const r=S.compute(cfg);assert.equal(r.error,null);const days={};const budgets={};for(const [kind,rows]of [['attendance',r.attendanceRows],['study',r.studyRows]])for(const row of rows){const d=row.dateObj,start=S.parseTime(row.start),end=start+Math.round(row.hours*60),key=d.toDateString();for(const b of cfg.unavailable||[])if(d.getDay()===b.day&&(!b.startDate||iso(d)>=b.startDate)&&(!(b.endDate||b.startDate)||iso(d)<=(b.endDate||b.startDate)))assert(end<=b.startMin||start>=b.endMin,'unavailable conflict');(days[key]??=[]).push([start,end]);const sun=new Date(d);sun.setDate(sun.getDate()-sun.getDay());const k=sun.toDateString()+row.code;(budgets[k]??={attendance:0,study:0})[kind]+=end-start;}for(const blocks of Object.values(days)){blocks.sort((a,b)=>a[0]-b[0]);for(let i=1;i<blocks.length;i++)assert(blocks[i][0]>=blocks[i-1][1],'overlap');}for(const b of Object.values(budgets))assert(b.study<=b.attendance);return r;}
 let r=verify({...base,unavailable:[{day:1,startMin:480,endMin:600},{day:2,startMin:480,endMin:600}]});assert.equal(sum(r.attendanceRows),180);assert.equal(sum(r.studyRows),180);assert.equal(r.attendanceRows[0].start,'10:00a');
 r=verify({...base,classes:[{code:'CUSTOM',credits:3,customStudy:true,studySlots:[{day:5,startMin:1140}]}]});assert.equal(r.studyRows.length,1);assert.equal(r.studyRows[0].start,'7:00p');assert.equal(r.studyRows[0].end,'10:00p');
 r=verify({...base,classes:[{code:'SPLIT',credits:3,customStudy:true,studySlots:[{day:2,startMin:1140},{day:4,startMin:1140}]}]});assert.equal(r.studyRows.length,2);assert(r.studyRows.every(x=>x.hours===1.5));
@@ -29,6 +30,56 @@ const claims=[...fixedConfig.unavailable,...retained.map(row=>({day:row.dateObj.
 const movable=[...quietFixed.attendanceRows.filter(row=>row.code==='ASYNC'),...quietFixed.studyRows];
 for(const row of movable){const day=row.dateObj.getDay(),start=S.parseTime(row.start),end=start+Math.round(row.hours*60);for(const b of claims.filter(b=>b.day===day))assert(end<=b.startMin||start>=b.endMin,'movable row overlaps fixed meeting or unavailable time');claims.push({day,startMin:start,endMin:end});}
 for(const code of ['MATH 103','ASYNC']){const expected=code==='MATH 103'?150:180;assert.equal(sum(quietFixed.attendanceRows.filter(row=>row.code===code)),expected);assert.equal(sum(quietFixed.studyRows.filter(row=>row.code===code)),expected);}
+// A single calendar date moves only that week's automatic attendance or study.
+const datedBase={year:2026,month:9,classes:[{code:'DATED',credits:3}]};
+const oneDay={day:1,startMin:480,endMin:600,startDate:'2026-10-12'};
+const dated=verify({...datedBase,unavailable:[oneDay]});
+assert.deepEqual(dated.attendanceRows.filter(row=>row.dateObj.getDay()===1).map(row=>[iso(row.dateObj),row.start]),[
+  ['2026-09-28','8:00a'],['2026-10-05','8:00a'],['2026-10-12','10:00a'],['2026-10-19','8:00a'],['2026-10-26','8:00a']]);
+assert.equal(sum(dated.attendanceRows),900);assert.equal(sum(dated.studyRows),900);
+assert.deepEqual(dated.warnings,[]);assert.deepEqual(dated.shortfalls,[]);
+assert.deepEqual(S.buildWeekTemplate({...datedBase,unavailable:[oneDay]}),S.buildWeekTemplate(datedBase));
+const datedStudy=verify({...datedBase,unavailable:[{...oneDay,day:2,startDate:'2026-10-13'}]});
+assert.deepEqual(datedStudy.studyRows.filter(row=>row.dateObj.getDay()===2).map(row=>row.start),['8:00a','8:00a','10:00a','8:00a','8:00a']);
+// Bounds are inclusive, retain selected weekdays, and survive a month change.
+const rangeConfig={...datedBase,unavailable:[{...oneDay,startDate:'2026-10-26',endDate:'2026-11-02'}]};
+for(const month of [9,10]){
+  const result=verify({...rangeConfig,month});
+  for(const row of result.attendanceRows.filter(row=>row.dateObj.getDay()===1))
+    assert.equal(row.start,iso(row.dateObj)>='2026-10-26'&&iso(row.dateObj)<='2026-11-02'?'10:00a':'8:00a');
+  assert.equal(sum(result.attendanceRows),sum(result.studyRows));
+}
+const yearRange={...datedBase,month:11,unavailable:[{...oneDay,startDate:'2026-12-21',endDate:'2027-01-04'}]};
+for(const [year,month] of [[2026,11],[2027,0]]){
+  const result=verify({...yearRange,year,month});
+  for(const row of result.attendanceRows.filter(row=>row.dateObj.getDay()===1))
+    assert.equal(row.start,iso(row.dateObj)>='2026-12-21'&&iso(row.dateObj)<='2027-01-04'?'10:00a':'8:00a');
+}
+// Midnight means the selected day's end. Closing one complete week must not
+// suppress other weeks or invent study for attendance that could not fit.
+const closedWeek=verify({...datedBase,unavailable:Array.from({length:7},(_,day)=>({day,startMin:0,endMin:1440,startDate:'2026-10-11',endDate:'2026-10-17'}))});
+assert.equal(sum(closedWeek.attendanceRows),720);assert.equal(sum(closedWeek.studyRows),720);
+assert.deepEqual(closedWeek.shortfalls,[{code:'DATED',kind:'attendance',minutes:180,week:'10/11'}]);
+const midnight=verify({...datedBase,unavailable:[{day:1,startMin:480,endMin:1440,startDate:'2026-10-12'}]});
+assert(!midnight.attendanceRows.some(row=>iso(row.dateObj)==='2026-10-12'));assert.equal(sum(midnight.attendanceRows),900);
+// End-only, reversed and impossible dates are rejected, never made weekly.
+for(const block of [{...oneDay,startDate:'',endDate:'2026-10-12'},{...oneDay,endDate:'2026-10-11'},{...oneDay,startDate:'2026-02-30'}]){
+  const result=S.compute({...datedBase,unavailable:[block]});assert.equal(result.warnings.length,1);
+  assert.deepEqual(result.attendanceRows,S.compute(datedBase).attendanceRows);
+}
+// A date range outside the reporting period is inactive; clearing dates restores
+// existing weekly behavior exactly, including placeholders and custom study.
+const outOfRange=S.compute({...datedBase,unavailable:[{...oneDay,startDate:'2026-11-09'}]});assert.deepEqual(outOfRange.attendanceRows,S.compute(datedBase).attendanceRows);
+const weekly={...datedBase,unavailable:[{day:1,startMin:480,endMin:600}]};
+assert.deepEqual(S.compute({...weekly,unavailable:[{...weekly.unavailable[0],startDate:'',endDate:''}]}),S.compute(weekly));
+const customWeekly={...weekly,classes:[{code:'CUSTOM DATES',credits:3,customStudy:true,studySlots:[{day:5,startMin:660}]}]};
+const customDated=verify({...customWeekly,unavailable:[...weekly.unavailable,{day:5,startMin:660,endMin:840,startDate:'2026-10-16'}]});
+assert.deepEqual(customDated.studyRows.map(row=>row.start),['11:00a','11:00a','2:00p','11:00a','11:00a']);
+assert.deepEqual(S.compute({...customWeekly,unavailable:weekly.unavailable.map(b=>({...b,startDate:'',endDate:''}))}),S.compute(customWeekly));
+const datedFixed={...fixedConfig,startDate:null,endDate:null,month:9,unavailable:[{day:1,startMin:540,endMin:660,startDate:'2026-10-12'}]};
+const dateQuiet=S.compute(datedFixed);assert.deepEqual(dateQuiet.warnings,[]);assert.deepEqual(dateQuiet.shortfalls,[]);
+assert.equal(dateQuiet.attendanceRows.filter(row=>row.code==='MATH 103'&&iso(row.dateObj)==='2026-10-12').length,1);
+for(const code of ['MATH 103','ASYNC'])assert.equal(sum(dateQuiet.attendanceRows.filter(row=>row.code===code)),sum(dateQuiet.studyRows.filter(row=>row.code===code)));
 // Deterministic varied constraints across all months, with both real pressure schedules.
 let random=819;function rand(n){random=(random*1664525+1013904223)>>>0;return random%n;}
 const scenarios=[{"name": "Test Juan", "institution": "UH Hilo", "month": 11, "classes": [{"code": "ABC 200", "credits": 1, "meetings": [{"day": 3, "startMin": 720, "endMin": 770}]}, {"code": "DEF 280", "credits": 3, "meetings": [{"day": 1, "startMin": 720, "endMin": 795}], "addRemainder": true}, {"code": "GHI 365", "credits": 3, "meetings": [{"day": 2, "startMin": 660, "endMin": 735}, {"day": 4, "startMin": 660, "endMin": 735}]}, {"code": "JKL 400", "credits": 3, "meetings": [{"day": 3, "startMin": 840, "endMin": 1005}]}, {"code": "MNO 390", "credits": 3, "meetings": [{"day": 2, "startMin": 750, "endMin": 825}, {"day": 4, "startMin": 750, "endMin": 825}]}, {"code": "PQR 280L", "credits": 1}, {"code": "STU 360", "credits": 3}], "year": 2026, "dayStartMin": 480, "blockMinutes": 90, "startDate": "2026-08-24", "endDate": "2026-12-18"}, {"name": "Test Deux", "institution": "UH Manoa", "month": 8, "classes": [{"code": "ABC 555H", "credits": 4, "meetings": [{"day": 5, "startMin": 720, "endMin": 810}], "addRemainder": true}, {"code": "DEF 590P", "credits": 2, "meetings": [{"day": 6, "startMin": 540, "endMin": 740}]}, {"code": "GHI 581", "credits": 3, "meetings": [{"day": 1, "startMin": 810, "endMin": 885}, {"day": 3, "startMin": 810, "endMin": 885}]}, {"code": "JKL 535", "credits": 3, "meetings": [{"day": 2, "startMin": 920, "endMin": 995}, {"day": 4, "startMin": 920, "endMin": 995}]}, {"code": "MNO 523", "credits": 3, "meetings": [{"day": 1, "startMin": 600, "endMin": 700}]}, {"code": "PQR 533", "credits": 3, "meetings": [{"day": 2, "startMin": 810, "endMin": 885}, {"day": 4, "startMin": 810, "endMin": 885}]}], "year": 2026, "dayStartMin": 480, "blockMinutes": 90, "startDate": "2026-08-24", "endDate": "2026-12-18"}];

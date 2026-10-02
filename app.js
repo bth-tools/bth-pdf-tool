@@ -217,11 +217,19 @@
     var row=document.createElement("div");row.className="unavailable-row";
     row.innerHTML='<fieldset><legend>Unavailable days</legend>'+DAY_OPTIONS.map(function(day,i){
       return '<label class="check"><input type="checkbox" value="'+i+'" />'+day+'</label>';
-    }).join("")+'</fieldset><p class="hint">Every time below applies to all selected days.</p>'+
-      '<div class="unavailable-times"></div><div class="unavailable-actions">'+
+    }).join("")+'</fieldset><p class="hint unavailable-repeat">Repeats every week on the selected days.</p>'+
+      '<div class="unavailable-times"></div>'+
+      '<details class="unavailable-dates"><summary>Limit to dates (optional)</summary>'+
+      '<p class="hint">For one day, enter First date only. Add Last date for a longer period. Clear both to repeat every week.</p>'+
+      '<div class="grid2"><label>First date<input class="u-from" type="date" /></label>'+
+      '<label><span>Last date <span class="opt">(optional)</span></span><input class="u-until" type="date" /></label></div></details>'+
+      '<p class="class-error unavailable-date-error" role="alert" hidden></p><div class="unavailable-actions">'+
       '<button type="button" class="ghost small add-unavailable-time">+ Add time</button>'+
       '<button type="button" class="ghost small remove-unavailable-group">Remove these days and times</button></div>';
-    row.querySelector(".remove-unavailable-group").addEventListener("click",function(){row.remove();refreshPlaceholders();});
+    row.querySelector(".remove-unavailable-group").addEventListener("click",function(){
+      var error=row.querySelector(".unavailable-date-error").textContent;
+      if(error&&el.status.textContent===error)setStatus("");
+      row.remove();refreshPlaceholders();});
     row.querySelector(".add-unavailable-time").addEventListener("click",function(){addUnavailableTime(row);refreshPlaceholders();});
     addUnavailableTime(row);
     row.addEventListener("input",refreshPlaceholders);row.addEventListener("change",refreshPlaceholders);
@@ -233,13 +241,35 @@
     $("unavailableList").querySelectorAll(".unavailable-row").forEach(function(row){
       var days=row.querySelectorAll('input[type="checkbox"]:checked');
       var times=row.querySelectorAll(".unavailable-time");
+      var from=row.querySelector(".u-from").value,until=row.querySelector(".u-until").value;
+      var dateError="";
+      if(until&&!from)dateError="Enter First date, or clear Last date to repeat every week.";
+      else if(from&&until&&from>until)dateError="Last date must be on or after First date.";
+      else if(from&&days.length){
+        // Native date values are ISO strings. Use local noon to retain the
+        // selected calendar day in Hawaii and across daylight-saving changes.
+        var first=new Date(from+"T12:00:00"),last=new Date((until||from)+"T12:00:00"),matches=false;
+        for(var n=0;n<7&&first<=last;n++,first.setDate(first.getDate()+1)){
+          if(Array.prototype.some.call(days,function(day){return Number(day.value)===first.getDay();})){matches=true;break;}
+        }
+        if(!matches)dateError="Select a weekday that falls within these dates.";
+      }
+      var error=row.querySelector(".unavailable-date-error"),previousError=error.textContent;
+      error.textContent=dateError;error.hidden=!dateError;
+      if(previousError&&el.status.textContent===previousError)setStatus(dateError,dateError?"err":"");
+      function dateText(iso){return new Date(iso+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});}
+      row.querySelector(".unavailable-repeat").textContent=dateError ? "Check the dates below." : from
+        ? "Applies only "+dateText(from)+(until&&until!==from?" through "+dateText(until):"")+" on the selected days."
+        : "Repeats every week on the selected days.";
       if(!times.length)out.push({day:null,startMin:null,endMin:null});
       times.forEach(function(time){
         var start=Sched.parseTime(time.querySelector(".u-start").value),end=Sched.parseTime(time.querySelector(".u-end").value);
         // Native clocks represent midnight as 00:00; unavailable ends mean day's end.
         if(end===0)end=1440;
         if(!days.length)out.push({day:null,startMin:start,endMin:end});
-        days.forEach(function(day){out.push({day:Number(day.value),startMin:start,endMin:end});});
+        days.forEach(function(day){var block={day:Number(day.value),startMin:start,endMin:end};
+          if(from||until){block.startDate=from;block.endDate=until||from;}
+          out.push(block);});
       });
     });return out;
   }
@@ -612,6 +642,8 @@
     if (!cfg.name) { setStatus("Enter the student name first.", "err"); return; }
     if (isNaN(cfg.month) || isNaN(cfg.year)) { setStatus("Pick a month and year.", "err"); return; }
     if (!checkDates()) { setStatus(el.dateError.textContent, "err"); return; }
+    var unavailableDateError=$("unavailableList").querySelector(".unavailable-date-error:not([hidden])");
+    if(unavailableDateError){setStatus(unavailableDateError.textContent,"err");return;}
     el.generate.disabled = true;
     setStatus("Generating…");
     try {
@@ -733,7 +765,7 @@
       var file=fileInput.files[0];if(!file)return;
       review.replaceChildren();review.hidden=true;fileInput.disabled=true;
       try {
-        var reader=await import("./import-reader.mjs?v=7.1.1");
+        var reader=await import("./import-reader.mjs?v=7.1.2");
         var result=await reader.readSchedule(file,function(message){status.textContent=message;});
         if(!result.courses.length)throw new Error("No supported course entries were found. Try the STAR print view, or enter your classes manually.");
         status.textContent="Found "+result.courses.length+" courses across "+result.pages+" pages."+(result.ocr?" Scanned text was recognized: check every field against the original.":" Review before using this information.");

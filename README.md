@@ -1,9 +1,12 @@
 # Bridge to Hope — DHS Hours Auto-Filler
 
-Current release: **v7.1.1** (`7.1.1` in package metadata). The version appears beneath
-the app title. This release adds two importer fixes to v7.0.9: Start/End date labels
-stay separate when PDF text puts them on one line, and dates beside each meeting
-override shared course dates. Under the owner's counting convention, the last digit advances
+Current release: **v7.1.2** (`7.1.2` in package metadata). The version appears beneath
+the app title. This release adds one functional update to v7.1.1: unavailable-time
+groups can optionally be limited to one date or an inclusive date range. Weekly
+entry remains the default. Enter First date for one day; add Last date for a range.
+All time periods in the group share those dates, which persist when the report month
+changes. Automatic attendance and study avoid active blocks; fixed meetings remain
+as entered. Under the owner's counting convention, the last digit advances
 for each functional update and carries into the middle digit every ten updates
 (for example, v7.0.9 → v7.1.0). The leading digit identifies the major tool generation.
 Update this label, `index.html`, asset cache versions, and `package.json` together.

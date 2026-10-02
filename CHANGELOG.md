@@ -1,5 +1,28 @@
 # Release notes
 
+## v7.1.2 — October 1, 2026
+
+One functional update: unavailable-day groups can be limited to specific dates.
+Weekly entry remains the default. The collapsed **Limit to dates (optional)**
+section uses First date for one day and an optional Last date for an inclusive
+range. All selected weekdays and time periods in that group share those dates;
+clearing both restores weekly behavior. Dates persist when the report month changes.
+Invalid date entries show a plain message and prevent generation until corrected.
+
+This supports optional month-end entry without an appointment reason or missed-class
+history. Fixed meetings, attendance/study calculation policy, the FTW calendar and
+STAR importing are preserved. School breaks and canceled meetings remain outside
+this update; scenario 22 is deferred.
+
+Validation: all four regression scripts passed, including one-day/range boundaries,
+month and year transitions, midnight endpoints, a fully unavailable week, invalid
+dates, restored weekly behavior and retained fixed meetings. All 37 archived Suite 2
+monthly configurations produced unchanged complete results with their existing weekly
+inputs. Browser checks covered the weekly default, grouped times, date persistence,
+validation feedback and all three form downloads. Nine PDFs / 18 pages passed exact
+row, minute, editable-field, appearance and layout checks. Scenario 21's three forms
+are saved in **21/Test 2**, with updated report, matrix, inventory and evidence.
+
 ## v7.1.1 — October 1, 2026
 
 Two importer accuracy updates:

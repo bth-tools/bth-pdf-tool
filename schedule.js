@@ -849,8 +849,15 @@
         b.startMin >= 0 && b.endMin <= 1440 && b.endMin > b.startMin;
     }
     (config.unavailable || []).forEach(function (b) {
-      if (valid(b)) blocked[b.day].push(b);
-      else warnings.push("An unavailable time is incomplete or invalid and was not applied.");
+      var limited=!!(b.startDate||b.endDate),from=fromISODate(b.startDate),until=fromISODate(b.endDate||b.startDate);
+      var validDates=!limited||(from&&until&&toISODate(from)===b.startDate&&
+        toISODate(until)===(b.endDate||b.startDate)&&from<=until);
+      if (!valid(b)||!validDates) {warnings.push("An unavailable time or date range is incomplete or invalid and was not applied.");return;}
+      var date=available[b.day];
+      // Dated limits belong to the actual calendar date, never to every copy
+      // of that weekday or to the undated template used for placeholders.
+      if(!limited||(date&&date!==true&&inDates(date,{startDate:b.startDate,endDate:b.endDate||b.startDate})))
+        blocked[b.day].push(b);
     });
     function inDates(date, entry) {
       if (date === true) return true;
@@ -961,8 +968,9 @@
 
   function buildWeekTemplate(config) {
     var seed=legacyWeekTemplate(config);
+    var weeklyUnavailable=(config.unavailable||[]).filter(function(b){return !b.startDate&&!b.endDate;});
     // Preserve established automatic defaults, including display placeholders.
-    if (!seed.error && !(config.unavailable || []).length && !(config.classes || []).some(function(c){return c.customStudy;})) return seed;
+    if (!seed.error && !weeklyUnavailable.length && !(config.classes || []).some(function(c){return c.customStudy;})) return seed;
     var plan=planWeek(config,seed,null), classes=config.classes || [];
     function minutes(days,ix) {return days.reduce(function(n,blocks){return n+blocks.reduce(function(m,b){return m+(b.classIndex===ix?b.endMin-b.startMin:0);},0);},0);}
     var info=classes.map(function(c,ix){

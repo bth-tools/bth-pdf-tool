@@ -371,7 +371,7 @@ button { font: inherit; cursor: pointer; }
 .import-course { border: 1px solid var(--line); padding: 12px; border-radius: 8px; margin: 12px 0; }
 .import-course pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: .8rem; }
 .import-confirm { margin: 16px 0; }
-.course-dates, .meeting-dates { margin: 8px 0; font-size: .85rem; }
+.course-dates, .meeting-dates, .unavailable-dates { margin: 8px 0; font-size: .85rem; }
 .meeting-dates { grid-column: 1 / -1; }
-.course-dates summary, .meeting-dates summary { cursor: pointer; color: var(--brand); }
+.course-dates summary, .meeting-dates summary, .unavailable-dates summary { cursor: pointer; color: var(--brand); }
 #importReview > .grid2 { margin: 12px 0; }
