@@ -1,12 +1,11 @@
 # Bridge to Hope — DHS Hours Auto-Filler
 
-Current release: **v7.1.2** (`7.1.2` in package metadata). The version appears beneath
-the app title. This release adds one functional update to v7.1.1: unavailable-time
-groups can optionally be limited to one date or an inclusive date range. Weekly
-entry remains the default. Enter First date for one day; add Last date for a range.
-All time periods in the group share those dates, which persist when the report month
-changes. Automatic attendance and study avoid active blocks; fixed meetings remain
-as entered. Under the owner's counting convention, the last digit advances
+Current release: **v7.1.3** (`7.1.3` in package metadata). The version appears beneath
+the app title. This release makes one functional correction: zero-hour reports
+explain when course dates are outside the selected period, and empty forms are
+not downloaded. Import keeps the selected month. Reports with some usable hours
+still generate the selected forms that contain rows. Date-specific unavailable
+times from v7.1.2 remain available. Under the owner's counting convention, the last digit advances
 for each functional update and carries into the middle digit every ten updates
 (for example, v7.0.9 → v7.1.0). The leading digit identifies the major tool generation.
 Update this label, `index.html`, asset cache versions, and `package.json` together.

@@ -15,14 +15,14 @@
   <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png" />
-  <script src="theme.js?v=7.1.2"></script>
-  <link rel="stylesheet" href="styles.css?v=7.1.2" />
+  <script src="theme.js?v=7.1.3"></script>
+  <link rel="stylesheet" href="styles.css?v=7.1.3" />
 </head>
 <body>
   <main class="wrap">
     <header class="app-head">
       <h1>Bridge to Hope</h1>
-      <p class="app-version" aria-label="Version 7.1.2">v7.1.2</p>
+      <p class="app-version" aria-label="Version 7.1.3">v7.1.3</p>
       <p class="sub">First-To-Work attendance &amp; study-time auto-filler<br />
         <span class="muted">DHS 816 (class attendance), DHS 819 (unsupervised study) &amp; DHS 817 (monitored study)</span></p>
       <button id="howToBtn" type="button" class="help-btn">How to use</button>
@@ -229,7 +229,8 @@
           document for the selected dates before you generate them. Study is limited to recorded
           attendance per class and FTW week, including additional class hours selected.
           UH observed holidays are skipped for set-time attendance. Async attendance and all study
-          can use holidays. If hours cannot fit, the notice lists the unplaced hours; you can still generate the forms.
+          can use holidays. If hours cannot fit, the notice lists the unplaced hours; you can still generate forms with recorded hours.
+          Empty forms are not downloaded. If course dates fall outside the selected report period, the summary explains why there are no hours.
           Spring break, other non-instructional days, and one-off closures are not filtered.</li>
         <li><strong>Generate</strong> — your finished PDFs download. If a month needs more rows than
           one form holds, you also get a file ending “_continued” — submit that one too.</li>
@@ -240,9 +241,9 @@
   </div>
 
   <script src="lib/pdf-lib.min.js"></script>
-  <script src="schedule.js?v=7.1.2"></script>
-  <script src="pdffill.js?v=7.1.2"></script>
-  <script src="schedule-import.js?v=7.1.2"></script>
-  <script src="app.js?v=7.1.2"></script>
+  <script src="schedule.js?v=7.1.3"></script>
+  <script src="pdffill.js?v=7.1.3"></script>
+  <script src="schedule-import.js?v=7.1.3"></script>
+  <script src="app.js?v=7.1.3"></script>
 </body>
 </html>

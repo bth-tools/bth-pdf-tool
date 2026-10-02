@@ -1,5 +1,25 @@
 # Release notes
 
+## v7.1.3 — October 1, 2026
+
+One functional correction: explain zero-hour reports and prevent empty-form
+downloads. When all courses fall outside the selected report dates, the hours
+summary explains the mismatch; for one dated course it shows the course's dates.
+The selected month is preserved during import. Generation skips selected forms
+with no rows and refuses an entirely empty download. Forms containing recorded
+hours still generate, including when study or other hours cannot fit.
+
+The scheduler, course dates, async allowances, fixed meetings, availability and
+FTW reporting calendar are unchanged. No automatic month switching was added.
+
+Validation: all four existing regression scripts passed. Normal browser checks
+reproduced Suite 2 scenario 02's October zero-hour case, verified that October
+stays selected and that no PDF is emitted, and checked active-course, manual-entry
+and partial-report generation. Seven captured PDFs passed exact row/minute,
+canonical field/widget, editable-field and visible-appearance checks. Rendered
+attendance and both study forms showed populated, unclipped values. These are
+focused development checks; existing pressure-test runs were preserved.
+
 ## v7.1.2 — October 1, 2026
 
 One functional update: unavailable-day groups can be limited to specific dates.

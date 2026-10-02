@@ -82,6 +82,26 @@
     return Sched.reportPeriod(y, m);
   }
 
+  function emptyScheduleMessage(cfg) {
+    var period = Sched.reportPeriod(cfg.year, cfg.month);
+    var from = cfg.startDate || period.startISO, until = cfg.endDate || period.endISO;
+    var outside = cfg.classes.every(function (c) {
+      return (c.startDate && c.startDate > until) || (c.endDate && c.endDate < from);
+    });
+    var courseDates = "The course dates are outside this report period.";
+    if (cfg.classes.length === 1 && cfg.classes[0].startDate && cfg.classes[0].endDate) {
+      var c = cfg.classes[0];
+      function dateText(iso) {
+        return new Date(iso + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+      }
+      courseDates = c.code + " runs " + dateText(c.startDate) + " through " + dateText(c.endDate) + ".";
+    }
+    return outside
+      ? "No class dates fall within " + Sched.MONTHS[cfg.month] + " " + cfg.year +
+        " (" + period.label + "). " + courseDates
+      : "No attendance or study hours could be scheduled for these report dates. Review the scheduling notices and entered times.";
+  }
+
   function fillMonthYear() {
     var now = new Date();
     Sched.MONTHS.forEach(function (m, i) {
@@ -520,6 +540,9 @@
     if(dated&&!dated.error)(dated.shortfalls || []).forEach(function(s){
       notices.push("Week of "+s.week+": "+s.code+" — "+Sched.formatTotal(s.minutes)+" "+s.kind+" hours could not fit. These hours are not on the forms.");
     });
+    if (dated && !dated.error && cfg.classes.length && !dated.attendanceRows.length && !dated.studyRows.length) {
+      notices.unshift(emptyScheduleMessage(cfg));
+    }
     $("scheduleNotices").replaceChildren();
     notices.forEach(function(message){var p=document.createElement("p");p.textContent=message;$("scheduleNotices").appendChild(p);});
     $("scheduleNotices").hidden=!notices.length;
@@ -653,6 +676,17 @@
         setStatus(res.error.message, "err");
         return;
       }
+      // An empty form is not a successful report. Still generate every selected
+      // form that has rows when only part of the requested hours can fit.
+      var populated = wanted.filter(function (form) { return res[form.rows].length; });
+      if (!populated.length) {
+        setStatus((!res.attendanceRows.length && !res.studyRows.length
+          ? emptyScheduleMessage(cfg) : "No hours are available for the selected forms.") +
+          " No empty forms were downloaded.", "err");
+        return;
+      }
+      var skippedEmpty = populated.length !== wanted.length;
+      wanted = populated;
       var header = {
         name: cfg.name,
         institution: cfg.institution,
@@ -688,6 +722,7 @@
 
       var schedulingNote = (res.shortfalls.length || res.warnings.length)
         ? " Review the scheduling notices above; the PDFs contain the hours that could be recorded." : "";
+      if (skippedEmpty) schedulingNote += " Empty forms were not downloaded.";
       var noun = jobs.length === 1 ? "PDF" : jobs.length + " PDFs";
       if (continued > 0) {
         setStatus("Done. " + noun + " downloaded. " + res.monthYearLabel + " needs more rows " +
@@ -765,7 +800,7 @@
       var file=fileInput.files[0];if(!file)return;
       review.replaceChildren();review.hidden=true;fileInput.disabled=true;
       try {
-        var reader=await import("./import-reader.mjs?v=7.1.2");
+        var reader=await import("./import-reader.mjs?v=7.1.3");
         var result=await reader.readSchedule(file,function(message){status.textContent=message;});
         if(!result.courses.length)throw new Error("No supported course entries were found. Try the STAR print view, or enter your classes manually.");
         status.textContent="Found "+result.courses.length+" courses across "+result.pages+" pages."+(result.ocr?" Scanned text was recognized: check every field against the original.":" Review before using this information.");
