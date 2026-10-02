@@ -16,12 +16,19 @@
       // Keep recovery within the labeled course block, not its calendar grid.
       const campus=/Campus\s*:\s*([^\n]*?)(?=\s+['‘’`]*\s*CRN\s*:|\n|$)/i.exec(chunk);
       const when=/When\s*\/?\s*Where\s*:\s*([\s\S]*?)(?=Credits\s*:|CRN\s*:|Start\s+date\s*:|End\s+date\s*:|$)/i.exec(chunk);
-      const startLabel=/Start\s+date\s*:\s*([^\n]*)/i.exec(chunk),endLabel=/End\s+date\s*:\s*([^\n]*)/i.exec(chunk);
+      // PDF text can put both labels on one line. Stop at the next label so
+      // an end date cannot become a second component's start date.
+      const startLabel=/Start\s+date\s*:\s*([^\n]*?)(?=(?:Start|End)\s+date\s*:|\n|$)/i.exec(chunk),endLabel=/End\s+date\s*:\s*([^\n]*?)(?=(?:Start|End)\s+date\s*:|\n|$)/i.exec(chunk);
       const from=dates(startLabel?startLabel[1]:''),until=dates(endLabel?endLabel[1]:'');
       const times=when?when[1]:'';const components=[...times.matchAll(/(?:\b([MTWRFSU](?:\s*[MTWRFSU])*)\s*)?\(\s*(\d{3,4}|TBA)\s+to\s+(\d{3,4}|TBA)\s*\)/gi)];
       const meetings=[],notes=[];
       components.forEach((c,j)=>{const start=clock(c[2]),end=clock(c[3]);if(start==null||end==null||end<=start||!c[1])return;
-        for(const day of c[1].toUpperCase().replace(/\s/g,'')){meetings.push({day:{U:0,M:1,T:2,W:3,R:4,F:5,S:6}[day],startMin:start,endMin:end,startDate:from[j]||from[0]||'',endDate:until[j]||until[0]||''});}});
+        // A range beside a meeting overrides the parallel/shared course dates.
+        // Bound the search by the next component so its range cannot leak back.
+        const detail=times.slice(c.index+c[0].length,j+1<components.length?components[j+1].index:times.length);
+        const range=/\[([^\]]*)\]/g;let match,componentDates=[];
+        while((match=range.exec(detail))){const pair=dates(match[1]);if(pair.length===2){componentDates=pair;break;}}
+        for(const day of c[1].toUpperCase().replace(/\s/g,'')){meetings.push({day:{U:0,M:1,T:2,W:3,R:4,F:5,S:6}[day],startMin:start,endMin:end,startDate:componentDates[0]||from[j]||from[0]||'',endDate:componentDates[1]||until[j]||until[0]||''});}});
       const hasTBA=/\bTBA\b/i.test(times);
       // No meetings means async, just as in manual entry. Damaged time-like
       // text warrants review, but does not change that default or block use.

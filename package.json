@@ -1,6 +1,6 @@
 {
   "name": "bth_pdf-tool",
-  "version": "7.0.9",
+  "version": "7.1.1",
   "main": "index.js",
   "scripts": {
     "test": "node _dev_holidays_test.js && node _dev_test.js && node _dev_scheduling_test.js && node _dev_import_test.js"

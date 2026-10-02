@@ -1,5 +1,27 @@
 # Release notes
 
+## v7.1.1 — October 1, 2026
+
+Two importer accuracy updates:
+
+- Keep Start and End date values separate when their labels share a line. Each
+  meeting inherits the correct shared range instead of using the course end as
+  a later component's start date.
+- Use an explicit bracketed date range beside an individual meeting, retaining
+  the shared course range when that component has no date override.
+
+Version counting carries two functional updates from v7.0.9 to v7.1.1. The
+scheduler, manual input flow and fixed-meeting notice behavior are preserved.
+
+Validation: all four regression scripts passed, including focused importer and
+scheduling cases for both date formats. Archived text checks matched all 85 Suite 2
+courses and preserved all 131 Suite 1 courses. Fresh PDF imports for Suite 2 cases
+10 and 11 required no manual corrections; nine DHS 816/819/817 downloads across
+October and December passed source-occurrence, exact-minute, overlap, editable-field
+and appearance checks. All 18 form pages were rendered and reviewed. Retests are
+saved in each case's Test 2 folder, with updated findings, evidence and matrix.
+Scenarios 21 and 22 remain deferred.
+
 ## v7.0.9 — October 1, 2026
 
 One functional update: remove the fixed-meeting overlap repair notice. Entered

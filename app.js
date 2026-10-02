@@ -733,7 +733,7 @@
       var file=fileInput.files[0];if(!file)return;
       review.replaceChildren();review.hidden=true;fileInput.disabled=true;
       try {
-        var reader=await import("./import-reader.mjs?v=7.0.9");
+        var reader=await import("./import-reader.mjs?v=7.1.1");
         var result=await reader.readSchedule(file,function(message){status.textContent=message;});
         if(!result.courses.length)throw new Error("No supported course entries were found. Try the STAR print view, or enter your classes manually.");
         status.textContent="Found "+result.courses.length+" courses across "+result.pages+" pages."+(result.ocr?" Scanned text was recognized: check every field against the original.":" Review before using this information.");
