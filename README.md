@@ -1,11 +1,10 @@
 # Bridge to Hope — DHS Hours Auto-Filler
 
-Current release: **v7.1.3** (`7.1.3` in package metadata). The version appears beneath
-the app title. This release makes one functional correction: zero-hour reports
-explain when course dates are outside the selected period, and empty forms are
-not downloaded. Import keeps the selected month. Reports with some usable hours
-still generate the selected forms that contain rows. Date-specific unavailable
-times from v7.1.2 remain available. Under the owner's counting convention, the last digit advances
+Current release: **v7.1.4** (`7.1.4` in package metadata). The version appears beneath
+the app title. This release makes one time-entry improvement: **Choose study times →
+Starts** uses the same native time selector as scheduled class meetings and
+unavailable times. Study end times and hours continue to calculate automatically.
+Under the owner's counting convention, the last digit advances
 for each functional update and carries into the middle digit every ten updates
 (for example, v7.0.9 → v7.1.0). The leading digit identifies the major tool generation.
 Update this label, `index.html`, asset cache versions, and `package.json` together.

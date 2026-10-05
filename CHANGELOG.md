@@ -1,5 +1,22 @@
 # Release notes
 
+## v7.1.4 — October 5, 2026
+
+One time-entry improvement: **Classes → Choose study times → Starts** now uses
+the same native time selector as scheduled class meetings and unavailable times.
+Users can select the hour, minute and AM/PM without typing a formatted time.
+Study allocation, calculated end times and PDF output rules are unchanged.
+
+Validation: all four existing regression scripts passed, including 972 monthly
+holiday schedules, 120 varied scheduling workloads, importer checks and PDF
+readbacks. Browser checks covered the picker, evening/noon/midnight times,
+multiple study times, equal and requested hours, incomplete entries and moving
+study around unavailable times. Three browser-generated development PDFs passed
+independent dated-row, hour-total, editable-field, widget and appearance checks;
+rendered attendance and both study forms showed populated, unclipped values.
+The replacement Test Suite 2 scenarios and saved user runs were not executed or
+modified for this release.
+
 ## v7.1.3 — October 1, 2026
 
 One functional correction: explain zero-hour reports and prevent empty-form

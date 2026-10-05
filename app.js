@@ -296,7 +296,7 @@
   function addStudySlot(item) {
     var row=document.createElement("div");row.className="study-slot time-options";
     row.innerHTML='<label>Study day<select class="s-day"><option value="">Day</option>'+DAY_OPTIONS.map(function(d,i){return '<option value="'+i+'">'+d+'</option>';}).join("")+'</select></label>'+
-      '<label>Starts<input class="s-start" type="text" placeholder="7:00p" /></label>'+
+      '<label>Starts<input class="s-start" type="time" /></label>'+
       '<label>Hours <span class="opt">(optional)</span><input class="s-hours" type="number" min="0.0167" step="any" placeholder="Automatic share" /></label>'+
       '<button type="button" class="ghost remove-time">Remove</button>';
     row.querySelector(".remove-time").addEventListener("click",function(){row.remove();refreshPlaceholders();});
@@ -800,7 +800,7 @@
       var file=fileInput.files[0];if(!file)return;
       review.replaceChildren();review.hidden=true;fileInput.disabled=true;
       try {
-        var reader=await import("./import-reader.mjs?v=7.1.3");
+        var reader=await import("./import-reader.mjs?v=7.1.4");
         var result=await reader.readSchedule(file,function(message){status.textContent=message;});
         if(!result.courses.length)throw new Error("No supported course entries were found. Try the STAR print view, or enter your classes manually.");
         status.textContent="Found "+result.courses.length+" courses across "+result.pages+" pages."+(result.ocr?" Scanned text was recognized: check every field against the original.":" Review before using this information.");
